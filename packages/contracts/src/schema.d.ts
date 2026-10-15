@@ -324,7 +324,7 @@ export interface components {
             data: components["schemas"]["SessionData"];
             meta: components["schemas"]["Meta"];
         };
-        RoleData: {
+        ProfileRoleData: {
             id: string;
             code: string;
             name: string;
@@ -335,7 +335,7 @@ export interface components {
             email: string;
             displayName: string;
             mustChangePassword: boolean;
-            roles: components["schemas"]["RoleData"][];
+            roles: components["schemas"]["ProfileRoleData"][];
             grants: {
                 [key: string]: ("ORG" | "BRANCH" | "OWN")[];
             };
@@ -402,6 +402,20 @@ export interface components {
             /** @enum {string} */
             status?: "ACTIVE" | "INACTIVE" | "LOCKED";
         };
+        GrantInput: {
+            code: string;
+            /** @enum {string} */
+            scope: "ORG" | "BRANCH" | "OWN";
+        };
+        RoleData: {
+            id: string;
+            code: string;
+            name: string;
+            isSystem: boolean;
+            permissions: components["schemas"]["GrantInput"][];
+            /** Format: date-time */
+            createdAt: string;
+        };
         RoleListResponse: {
             data: components["schemas"]["RoleData"][];
             meta: components["schemas"]["PageMeta"];
@@ -414,11 +428,6 @@ export interface components {
         PermissionListResponse: {
             data: components["schemas"]["PermissionData"][];
             meta: components["schemas"]["Meta"];
-        };
-        GrantInput: {
-            code: string;
-            /** @enum {string} */
-            scope: "ORG" | "BRANCH" | "OWN";
         };
         CreateRoleInput: {
             permissions: components["schemas"]["GrantInput"][];

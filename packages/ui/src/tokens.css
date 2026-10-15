@@ -1,3 +1,13 @@
+@theme inline {
+  --color-input: var(--border);
+  --color-ring: var(--accent);
+  --color-primary: var(--accent);
+  --color-primary-foreground: var(--accent-contrast);
+  --color-foreground: var(--text);
+  --color-muted-foreground: var(--muted);
+  --color-destructive: var(--danger);
+  --radius-md: var(--radius);
+}
 :root {
   color-scheme: light;
   --background: #f4f5f7;

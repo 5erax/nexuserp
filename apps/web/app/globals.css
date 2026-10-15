@@ -12,6 +12,46 @@ body {
   font-size: 15px;
   line-height: 1.6;
 }
+.auth-panel {
+  max-width: 440px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.form-stack {
+  display: grid;
+  gap: 1.25rem;
+  margin-top: 1.75rem;
+}
+.form-stack label {
+  display: grid;
+  gap: 0.4rem;
+  font-weight: 600;
+}
+.form-stack input {
+  font-weight: 400;
+  min-height: 44px;
+}
+.form-error {
+  padding: 1rem;
+  background: var(--surface);
+  border-left: 3px solid var(--danger);
+  margin: 1rem 0;
+}
+.form-error p {
+  color: var(--danger);
+  overflow-wrap: anywhere;
+}
+.profile-details {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.5rem 1.5rem;
+}
+.profile-details dd {
+  margin: 0;
+}
 a {
   color: inherit;
 }

@@ -4,9 +4,15 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./components/*": "./src/components/*.tsx",
+    "./lib/*": "./src/lib/*.ts",
     "./button": "./src/button.tsx",
     "./states": "./src/states.tsx",
     "./tokens.css": "./src/tokens.css"
+  },
+  "imports": {
+    "#components/*": "./src/components/*.tsx",
+    "#lib/*": "./src/lib/*.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"
@@ -18,5 +24,8 @@
     "@nexus/config": "workspace:*",
     "@types/react": "19.2.14",
     "typescript": "5.9.3"
+  },
+  "dependencies": {
+    "cn": "0.4.0"
   }
 }

@@ -56,6 +56,8 @@ docker compose --profile dev up --build
 
 Profile `dev` dùng hot reload cho API source, web app/components/lib/messages, shared UI và contracts source. Khi sửa manifest/package dependency hoặc Prisma schema/migration, build lại image rồi chạy migration. Chỉ chạy một profile tại một thời điểm vì cùng dùng cổng 3000. Source mount không ghi đè `node_modules` Linux bằng dependency Windows.
 
+Nest watch dùng --no-shell để quản lý trực tiếp tiến trình Node; tránh shell thoát nhưng để lại server cũ giữ cổng trên image slim. Job dev-containers thay source host, kiểm tra cả Next và Nest đổi response mà không rebuild, rồi khôi phục source.
+
 `docker compose --profile app down` dừng container và giữ volume database. `docker compose --profile app down -v` **xóa dữ liệu local**; chỉ dùng khi chủ động reset demo/test. Script khởi tạo database test chỉ chạy khi volume mới; nếu volume đã có từ trước, tạo `nexuserp_test` thủ công.
 
 ## Khởi tạo chủ tài khoản
@@ -65,6 +67,8 @@ Profile `dev` dùng hot reload cho API source, web app/components/lib/messages, 
 shadcn/ui dùng cấu hình monorepo trong apps/web và packages/ui; Tailwind v4 để trống config. Thêm component từ apps/web bằng `pnpm dlx shadcn@4.21.5 add <component>` rồi kiểm tra dependency được khai báo ở package sở hữu source (shared Input và cn nằm trong packages/ui). Giữ tokens hiện có; không ghi đè CSS toàn app. Tham chiếu [hướng dẫn monorepo](https://ui.shadcn.com/docs/monorepo).
 
 ## Kiểm chứng trước khi mở PR
+
+Các lần kiểm chứng gate lỗi, thời gian CI và hot reload Docker được ghi tại [CI_VERIFICATION](CI_VERIFICATION.md).
 
 ```sh
 pnpm lint

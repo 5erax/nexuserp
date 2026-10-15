@@ -102,6 +102,37 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with: { name: iam-security-diagnostics, path: apps/api/coverage/ }
+  dev-containers:
+    runs-on: ubuntu-latest
+    env:
+      JWT_SECRET: dev_container_ci_jwt_key_only_not_for_deployment
+      CSRF_SECRET: dev_container_ci_csrf_key_only_not_for_deployment
+      POSTGRES_PASSWORD: dev_ci_only
+      COMPOSE_DATABASE_URL: postgresql://nexus:dev_ci_only@postgres:5432/nexuserp
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version-file: .nvmrc }
+      - name: Start development profile on a clean runner
+        run: |
+          cp .env.example .env
+          docker compose --profile dev up --build -d
+          for i in $(seq 1 90); do
+            if curl --fail --silent http://127.0.0.1:3000/api/v1/health/ready; then exit 0; fi
+            sleep 1
+          done
+          docker compose --profile dev logs
+          exit 1
+      - name: Verify Nest and Next hot reload through source bind mounts
+        run: node infrastructure/docker/check-dev-reload.cjs
+      - name: Retain logs and remove only isolated CI resources
+        if: always()
+        run: |
+          docker compose --profile dev logs > compose-dev.log
+          docker compose --profile dev down -v
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: development-container-diagnostics, path: compose-dev.log }
   containers:
     runs-on: ubuntu-latest
     env:

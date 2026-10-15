@@ -4,9 +4,9 @@
 
 [![Repo checks](https://github.com/5erax/nexuserp/actions/workflows/repo-checks.yml/badge.svg)](https://github.com/5erax/nexuserp/actions/workflows/repo-checks.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-![Status](https://img.shields.io/badge/status-Phase%201%20%E2%80%94%20IAM-orange)
+![Status](https://img.shields.io/badge/status-Phase%202%20%E2%80%94%20Catalog%20%26%20Inventory-orange)
 
-**Trạng thái hiện tại:** đang triển khai Phase 1. Nền tảng và hợp đồng MVP đã có; API hỗ trợ login/me/refresh/logout, CSRF, rate limit, guard mặc định từ chối và audit append-only. Schema IAM và seed permission/role có kiểm thử PostgreSQL. Giao diện auth/quản trị và nghiệp vụ bán hàng/tồn kho còn trong backlog. Xem [hướng dẫn chạy](docs/development/SETUP.md); tiến độ theo dõi tại [GitHub Project](https://github.com/users/5erax/projects/5).
+**Trạng thái hiện tại:** Phase 1 đã hoàn tất: đăng nhập/đổi mật khẩu/đăng xuất, API và giao diện quản trị user, role, chi nhánh, tổ chức; CSRF, rate limit, scoped guard và audit append-only có kiểm thử PostgreSQL/browser. Đang triển khai Phase 2 Catalog & Inventory; nghiệp vụ kho, bán hàng và báo cáo chưa hoàn tất. Xem [hướng dẫn chạy](docs/development/SETUP.md), [kiểm chứng CI/Docker](docs/development/CI_VERIFICATION.md); tiến độ theo dõi tại [GitHub Project](https://github.com/users/5erax/projects/5).
 
 *English summary:* NexusERP is a portfolio-grade, multi-branch ERP (sales, inventory, IAM first) built as a modular monolith with NestJS, Next.js and PostgreSQL. The goal is to demonstrate correct business logic rather than CRUD screens: atomic stock reservation under concurrency, idempotent commands, an append-only inventory ledger, scoped RBAC and automated tests. Specs, business rules and ADRs live in [`docs/`](docs/README.md).
 

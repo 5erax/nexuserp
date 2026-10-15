@@ -21,13 +21,13 @@ import { RequirePermission } from '../../../common/security/access';
 import type { AuthorizedRequest } from '../../../common/security/security.guard';
 import { AuditService } from '../application/audit.service';
 class AuditQuery {
-  @ApiPropertyOptional({ default: 20, maximum: 100 })
+  @ApiPropertyOptional({ type: 'integer', default: 20, minimum: 1, maximum: 100 })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1)
   @Max(100)
-  limit = 20;
+  limit: number = 20;
   @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(256) cursor?: string;
   @ApiPropertyOptional() @IsOptional() @IsUUID('4') actorId?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(64) entityType?: string;

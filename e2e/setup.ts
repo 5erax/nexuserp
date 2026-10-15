@@ -2,7 +2,7 @@ import { randomUUID, randomBytes } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 import path from 'node:path';
-export default function setup() {
+export function bootstrapFixture() {
   const apiDirectory = path.resolve('apps/api');
   const requireApi = createRequire(path.join(apiDirectory, 'package.json'));
   const code = 'E2E-' + randomUUID().slice(0, 8).toUpperCase();
@@ -23,6 +23,10 @@ export default function setup() {
       stdio: 'pipe',
     },
   );
+  return { code, email, password };
+}
+export default function setup() {
+  const { code, email, password } = bootstrapFixture();
   process.env.E2E_ORGANIZATION_CODE = code;
   process.env.E2E_EMAIL = email;
   process.env.E2E_PASSWORD = password;

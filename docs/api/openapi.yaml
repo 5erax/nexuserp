@@ -626,12 +626,18 @@ paths:
           required: false
           in: query
           schema:
-            $ref: "#/components/schemas/Object"
+            minimum: 1
+            maximum: 1000000
+            default: 1
+            type: integer
         - name: pageSize
           required: false
           in: query
           schema:
-            $ref: "#/components/schemas/Object"
+            minimum: 1
+            maximum: 100
+            default: 20
+            type: integer
         - name: q
           required: false
           in: query
@@ -742,7 +748,12 @@ paths:
         - iam
     post:
       operationId: UsersController_create
-      parameters: []
+      parameters:
+        - in: header
+          name: X-CSRF-Token
+          required: true
+          schema:
+            type: string
       requestBody:
         required: true
         content:
@@ -904,6 +915,11 @@ paths:
           in: path
           schema:
             type: string
+        - in: header
+          name: X-CSRF-Token
+          required: true
+          schema:
+            type: string
       requestBody:
         required: true
         content:
@@ -987,12 +1003,18 @@ paths:
           required: false
           in: query
           schema:
-            $ref: "#/components/schemas/Object"
+            minimum: 1
+            maximum: 1000000
+            default: 1
+            type: integer
         - name: pageSize
           required: false
           in: query
           schema:
-            $ref: "#/components/schemas/Object"
+            minimum: 1
+            maximum: 100
+            default: 20
+            type: integer
         - name: q
           required: false
           in: query
@@ -1080,7 +1102,12 @@ paths:
         - iam
     post:
       operationId: RolesController_create
-      parameters: []
+      parameters:
+        - in: header
+          name: X-CSRF-Token
+          required: true
+          schema:
+            type: string
       requestBody:
         required: true
         content:
@@ -1238,6 +1265,11 @@ paths:
           in: path
           schema:
             type: string
+        - in: header
+          name: X-CSRF-Token
+          required: true
+          schema:
+            type: string
       requestBody:
         required: true
         content:
@@ -1321,12 +1353,18 @@ paths:
           required: false
           in: query
           schema:
-            $ref: "#/components/schemas/Object"
+            minimum: 1
+            maximum: 1000000
+            default: 1
+            type: integer
         - name: pageSize
           required: false
           in: query
           schema:
-            $ref: "#/components/schemas/Object"
+            minimum: 1
+            maximum: 100
+            default: 20
+            type: integer
         - name: q
           required: false
           in: query
@@ -1422,7 +1460,12 @@ paths:
         - iam
     post:
       operationId: OrganizationController_create
-      parameters: []
+      parameters:
+        - in: header
+          name: X-CSRF-Token
+          required: true
+          schema:
+            type: string
       requestBody:
         required: true
         content:
@@ -1584,6 +1627,11 @@ paths:
           in: path
           schema:
             type: string
+        - in: header
+          name: X-CSRF-Token
+          required: true
+          schema:
+            type: string
       requestBody:
         required: true
         content:
@@ -1734,7 +1782,12 @@ paths:
       tags: *a8
     patch:
       operationId: OrganizationController_updateProfile
-      parameters: []
+      parameters:
+        - in: header
+          name: X-CSRF-Token
+          required: true
+          schema:
+            type: string
       requestBody:
         required: true
         content:
@@ -1818,7 +1871,10 @@ paths:
           required: false
           in: query
           schema:
-            $ref: "#/components/schemas/Object"
+            minimum: 1
+            maximum: 100
+            default: 20
+            type: integer
         - name: cursor
           required: false
           in: query
@@ -2135,9 +2191,6 @@ components:
       required:
         - currentPassword
         - newPassword
-    Object:
-      type: object
-      properties: {}
     UserRoleData:
       type: object
       properties:

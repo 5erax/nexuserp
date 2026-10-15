@@ -54,7 +54,7 @@ Xác thực của profile production yêu cầu TLS proxy bên ngoài, WEB_ORIGI
 docker compose --profile dev up --build
 ```
 
-Profile `dev` dùng hot reload cho API source, web app/messages và shared UI. Khi sửa manifest/package dependency, build lại image. Chỉ chạy một profile tại một thời điểm vì cùng dùng cổng 3000. Source mount không ghi đè `node_modules` Linux bằng dependency Windows.
+Profile `dev` dùng hot reload cho API source, web app/components/lib/messages, shared UI và contracts source. Khi sửa manifest/package dependency hoặc Prisma schema/migration, build lại image rồi chạy migration. Chỉ chạy một profile tại một thời điểm vì cùng dùng cổng 3000. Source mount không ghi đè `node_modules` Linux bằng dependency Windows.
 
 `docker compose --profile app down` dừng container và giữ volume database. `docker compose --profile app down -v` **xóa dữ liệu local**; chỉ dùng khi chủ động reset demo/test. Script khởi tạo database test chỉ chạy khi volume mới; nếu volume đã có từ trước, tạo `nexuserp_test` thủ công.
 

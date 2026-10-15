@@ -19,6 +19,20 @@ export function createOpenApi(app: INestApplication) {
     for (const method of ['get', 'post', 'put', 'patch', 'delete'] as const) {
       const operation = path?.[method];
       if (!operation) continue;
+      if (method !== 'get') {
+        operation.parameters ??= [];
+        if (
+          !operation.parameters.some(
+            (p) => 'name' in p && p.in === 'header' && p.name.toLowerCase() === 'x-csrf-token',
+          )
+        )
+          operation.parameters.push({
+            in: 'header',
+            name: 'X-CSRF-Token',
+            required: true,
+            schema: { type: 'string' },
+          });
+      }
       for (const status of [400, 401, 403, 404, 409, 413, 422, 429, 500, 503])
         operation.responses[String(status)] ??= {
           description: 'API error; inspect error.code and error.requestId',

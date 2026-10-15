@@ -536,6 +536,31 @@ describe('IAM auth security on PostgreSQL', () => {
       await isolated.close();
     }
   });
+  it('IAM-007 revocation tolerates expired families pruned after candidate listing', async () => {
+    const value = await session();
+    await prisma.refreshFamily.update({
+      where: { id: value.familyId },
+      data: {
+        createdAt: new Date(Date.now() - 172800000),
+        expiresAt: new Date(Date.now() - 86400000),
+      },
+    });
+    const candidates = await prisma.refreshFamily.findMany({
+      where: { userId, revokedAt: null },
+      orderBy: { id: 'asc' },
+    });
+    await prisma.$transaction(async (tx) => {
+      await tx.refreshSession.deleteMany({ where: { familyId: value.familyId } });
+      await tx.refreshFamily.delete({ where: { id: value.familyId } });
+    });
+    const listing = jest.spyOn(prisma.refreshFamily, 'findMany').mockResolvedValueOnce(candidates);
+    try {
+      await expect(auth.revokeUserSessions(prisma, userId)).resolves.toBeUndefined();
+    } finally {
+      listing.mockRestore();
+    }
+    expect(await prisma.refreshFamily.count({ where: { userId, revokedAt: null } })).toBe(0);
+  });
   it('IAM-007 password change wins against concurrent refresh and revokes every device', async () => {
     const value = await session();
     const other = await session();

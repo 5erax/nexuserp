@@ -306,7 +306,7 @@ export class AuthService {
     });
     for (const family of families) {
       await tx.$queryRaw`SELECT id FROM refresh_families WHERE id=${family.id}::uuid FOR UPDATE`;
-      await tx.refreshFamily.update({
+      await tx.refreshFamily.updateMany({
         where: { id: family.id },
         data: { revokedAt: await this.now(tx) },
       });

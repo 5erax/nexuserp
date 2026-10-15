@@ -4,6 +4,8 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./data-table": "./src/data-table.tsx",
+    "./dialog": "./src/dialog.tsx",
     "./components/*": "./src/components/*.tsx",
     "./lib/*": "./src/lib/*.ts",
     "./button": "./src/button.tsx",

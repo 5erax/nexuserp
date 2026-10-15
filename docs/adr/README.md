@@ -17,16 +17,11 @@ Các quyết định "khóa từ đầu" trong SRS (mục XIII).
 | [0007](0007-money-and-immutable-posted-documents.md) | Tiền dùng Decimal; chứng từ đã posted là bất biến |
 | [0008](0008-transactional-outbox.md) | Transactional outbox cho tác vụ cần tin cậy sau commit |
 | [0009](0009-rest-openapi-versioned-api.md) | REST có version, OpenAPI-first, quy chuẩn lỗi thống nhất |
+| [0010](0010-cookie-and-csrf-strategy.md) | Một origin, HttpOnly cookie, CSRF gắn phiên và chính sách rotation |
+| [0011](0011-warehouse-selection-for-orders.md) | Đơn lấy từ một kho mặc định thuộc cùng chi nhánh |
+| [0012](0012-costing-and-profit-report.md) | Hoãn costing/lợi nhuận tới Phase 5, không coi chi phí chưa biết là 0 |
+| [0013](0013-pricing-discount-tax-for-mvp.md) | Giá biến thể, một giảm giá theo đơn, VND làm tròn HALF_UP, thuế 0 |
+| [0014](0014-minimal-payment-recording.md) | Finance tối giản ghi nhận thanh toán vào đơn từ Phase 3 |
+| [0015](0015-package-manager-and-monorepo-tooling.md) | pnpm workspaces và Turborepo, khóa phiên bản khi scaffold |
 
-## Đang chờ quyết định
-
-Theo dõi bằng issue; ADR được viết khi chốt.
-
-| ADR | Câu hỏi | Cần chốt trước | Issue |
-| --- | --- | --- | --- |
-| 0010 | Chiến lược cookie và CSRF giữa Next.js và NestJS | Phase 1 | `P0-ADR-010` |
-| 0011 | Đơn hàng giữ hàng từ kho nào; có bán chéo chi nhánh không | Phase 2 | `P0-ADR-011` |
-| 0012 | Phương pháp tính giá vốn và phạm vi báo cáo lợi nhuận | Phase 2 | `P0-ADR-012` |
-| 0013 | Giá, giảm giá và thuế ở MVP | Phase 3 | `P0-ADR-013` |
-| 0014 | Ghi nhận thanh toán tối giản ở Phase 3 | Phase 3 | `P0-ADR-014` |
-| 0015 | Package manager và công cụ monorepo | Phase 0 | `P0-ADR-015` |
+ADR-0010–0015 giải quyết các issue quyết định #27–31 và #9. Trạng thái Accepted ghi quyết định thiết kế; không đồng nghĩa mã ứng dụng đã triển khai hay kiểm thử. Issue chỉ đóng khi PR tài liệu được merge.

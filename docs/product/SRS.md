@@ -4,7 +4,7 @@
 
 `Business ERP` · `Portfolio-ready` · `Modular Monolith` · `Web Application`
 
-> Tài liệu gốc được đưa vào repository để làm nguồn tham chiếu. Phần định dạng bị hỏng khi chuyển đổi (sơ đồ, ảnh, CSS) đã được làm sạch hoặc dựng lại; nội dung nghiệp vụ được giữ nguyên. Các điểm còn mở được liệt kê ở **Phụ lục A** và theo dõi bằng issue.
+> Baseline gốc đã được làm sạch định dạng và hiệu chỉnh phạm vi theo roadmap Phase 0–6. Phụ lục A ghi trạng thái các điểm đã làm rõ và các phần còn phải triển khai; quyết định kiến trúc nằm trong ADR.
 
 NexusERP là hệ thống quản trị nguồn lực doanh nghiệp (Enterprise Resource Planning), tập trung vào bán hàng, khách hàng, mua hàng, tồn kho, tài chính và nhân sự, dành cho doanh nghiệp vừa và nhỏ có nhiều chi nhánh.
 
@@ -46,8 +46,8 @@ Phiên bản portfolio đầu tiên dùng một doanh nghiệp có nhiều chi n
 | --- | --- |
 | Presentation | Next.js · React · TanStack Query · shadcn/ui |
 | API & Security | NestJS REST · JWT · RBAC · DTO Validation · Rate Limit |
-| Domain & Application | IAM · CRM · Sales · Inventory · Purchase · Finance · HRM · Reporting · Audit |
-| Dữ liệu | PostgreSQL (system of record) · Redis (cache/queue) · Object Storage (attachments) |
+| Domain & Application | IAM · Catalog · CRM · Sales · Inventory · Purchasing · Finance · HRM · Reporting · Audit |
+| Dữ liệu | PostgreSQL (system of record); Redis/BullMQ từ Phase 6; attachments chưa thuộc MVP |
 
 Các module có service và repository riêng, giao tiếp qua application interfaces/domain events.
 
@@ -62,7 +62,7 @@ Các module có service và repository riêng, giao tiếp qua application inter
 | API          | REST + OpenAPI                     | Contracts, tài liệu API          |
 | Database     | PostgreSQL                         | Dữ liệu nghiệp vụ chuẩn          |
 | Data Access  | Prisma                             | Schema, migrations, truy vấn     |
-| Cache & Jobs | Redis, BullMQ                      | Cache và xử lý bất đồng bộ       |
+| Cache & Jobs | Redis, BullMQ (Phase 6)            | MVP dùng outbox polling trong tiến trình |
 | Auth         | JWT, HttpOnly cookies, Argon2id    | Phiên đăng nhập, mã hóa mật khẩu |
 | Testing      | Vitest/Jest, Supertest, Playwright | Unit, integration, E2E           |
 | Ops          | Docker, GitHub Actions             | Build, test, triển khai          |
@@ -130,19 +130,22 @@ Về lâu dài có thể tách một số module thành service độc lập, nh
 
 ## III. Thiết kế chức năng theo module
 
-NexusERP được chia thành 9 module nghiệp vụ, trong đó các module có chung dữ liệu nhưng trách nhiệm không chồng chéo.
+NexusERP có **10 business module** dùng chung PostgreSQL, mỗi module sở hữu quy tắc và thao tác ghi của mình. Outbox là hạ tầng dùng chung, không phải module nghiệp vụ thứ 11.
 
-| Module             | Functions chính                                         | Phạm vi  |
-| ------------------ | ------------------------------------------------------- | -------- |
-| IAM & Organization | Users, roles, permissions, branches, audit              | MVP      |
-| Catalog            | Products, SKU, categories, pricing, units               | MVP      |
-| CRM                | Customers, contacts, history, leads                     | MVP + P3 |
-| Sales              | Quotations, orders, discounts, fulfillment, returns     | MVP + P3 |
-| Inventory          | Warehouses, stock, reservations, transfers, adjustments | MVP + P3 |
-| Purchasing         | Suppliers, PO, receiving, purchase returns              | P3       |
-| Finance            | Payments, receivables, payables, accounting ledger      | P3–P4    |
-| HRM                | Employees, departments, attendance, leave               | P4       |
-| Analytics          | Operational KPIs, sales reports, exports                | MVP + P3 |
+| Module (mã chuẩn) | Trong MVP, kết thúc Phase 4 | Sau MVP |
+| --- | --- | --- |
+| IAM & Organization (`iam`) | Phase 1: phiên, users, roles, permissions, branches | Phase 6: cách ly tenant đầy đủ |
+| Catalog (`catalog`) | Phase 2: products, variants, SKU, giá bán cơ bản | Phase 5: price list nếu cần |
+| Inventory (`inventory`) | Phase 2: kho, ledger, balance, reservation, adjustment | Phase 5: chuyển kho và trả hàng |
+| CRM (`crm`) | Phase 3: hồ sơ khách hàng, lịch sử đơn theo phạm vi | Leads/pipeline chỉ mở rộng khi có yêu cầu |
+| Sales (`sales`) | Phase 3: đơn nháp, confirm, giao đủ một lần, hủy trước xuất kho | Phase 5: giao một phần, trả hàng, báo giá nếu cần |
+| Finance (`finance`) | Phase 3: chỉ ghi nhận thanh toán thủ công vào đơn | Phase 5: hóa đơn, công nợ, phân bổ, sổ cái, hoàn tiền |
+| Reporting (`reporting`) | Phase 4: doanh thu, đơn hàng, tồn kho, CSV | Phase 5: lợi nhuận sau khi có costing |
+| Audit (`audit`) | Phase 1: nhật ký và API; Phase 4: giao diện timeline | Mở rộng theo nghiệp vụ |
+| Purchasing (`purchasing`) | Không thuộc MVP | Phase 5: supplier, PO, nhận hàng, trả hàng mua |
+| HRM (`hrm`) | Không thuộc MVP | Phase 5: nhân viên, chấm công, nghỉ phép |
+
+Các luồng dưới đây mô tả đích dài hạn. MVP O2C chỉ gồm **khách hàng → đơn bán → giữ hàng → xuất kho/giao đủ → ghi nhận thanh toán thủ công**; không bao gồm báo giá, hóa đơn, đối soát công nợ hay pipeline CRM. API và UI bên dưới phải tuân theo phạm vi này.
 
 ### Luồng nghiệp vụ xuyên module
 
@@ -179,6 +182,8 @@ Các luồng này phải sử dụng trạng thái có định nghĩa, chứ kh�
 | IAM-005 | Hành động đặc quyền phải có audit trail                                            |
 | IAM-006 | Không được vô hiệu hóa quản trị viên hoạt động cuối cùng của tổ chức               |
 | IAM-007 | Refresh token phải hỗ trợ rotation và revocation                                   |
+
+Cookie/CSRF theo [ADR-0010](../adr/0010-cookie-and-csrf-strategy.md). Rotation nguyên tử theo family; token đã xoay trong cửa sổ 5 giây, nếu successor vẫn hiện tại, chỉ nhận 409, không cấp token và không đổi cookie. Ngoài cửa sổ hoặc successor cũng đã xoay thì thu hồi family. Xem [bảng trạng thái và test bắt buộc](../architecture/REFRESH_TOKEN_POLICY.md).
 
 RBAC dùng role để gán tập quyền, nhưng RBAC chưa đủ: cần thêm kiểm tra scope theo organization, branch và ownership của từng bản ghi.
 
@@ -245,7 +250,7 @@ Minh họa quy tắc tính toán; thao tác đặt trước thực tế phải �
 > Bảng chuyển trạng thái đầy đủ (từ → sang, điều kiện, vai trò được phép) được định nghĩa trong
 > issue `P0-DOC-002`; trạng thái giao hàng và thanh toán nên được tách khỏi vòng đời đơn.
 
-Trạng thái CANCELLED từ CONFIRMED chỉ hợp lệ nếu chưa xuất hàng và đã xử lý giữ hàng. RETURN_PROCESS là nhánh nghiệp vụ hoàn trả, không tự ý hoàn nguyên giao dịch đã posted.
+Trạng thái CANCELLED từ CONFIRMED chỉ hợp lệ nếu chưa xuất hàng, chưa có thanh toán thực nhận và đã xử lý giữ hàng trong cùng transaction. MVP từ chối hủy đơn đã nhận tiền vì hoàn/đảo thanh toán thuộc Phase 5 ([ADR-0014](../adr/0014-minimal-payment-recording.md)). RETURN_PROCESS là nhánh nghiệp vụ hoàn trả sau MVP, không tự ý hoàn nguyên giao dịch đã posted.
 
 Cần triển khai `OrderStatePolicy` để định nghĩa transition và điều kiện đi kèm. Tránh cho frontend gửi tùy ý `{ "status": "CLOSED" }` qua một endpoint cập nhật chung.
 
@@ -382,6 +387,7 @@ erDiagram
         uuid warehouse_id FK
         uuid variant_id FK
         decimal quantity_delta
+        decimal unit_cost "nullable; NULL khác 0"
         string reference_type
         uuid reference_id
     }
@@ -437,7 +443,9 @@ erDiagram
 
 > Sơ đồ được dựng lại từ danh sách cột của bản gốc; quan hệ được suy ra từ các khóa ngoại. Bản chính thức nằm trong `docs/database/ERD.md` (issue `P0-DB-002`).
 
-Lưu ý thiết kế: Đây là ERD logic rút gọn để nhìn được quan hệ. Bản schema triển khai phải bổ sung các bảng `stock_adjustments`, `stock_transfers`, `stock_transfer_items`, `idempotency_keys`, `audit_logs`, `outbox_events`, `refresh_sessions`, và các khóa ghép để không thể tham chiếu sai tổ chức.
+Lưu ý thiết kế: Đây là ERD logic rút gọn để nhìn được quan hệ. Bản schema triển khai phải bổ sung các bảng `stock_adjustments`, `stock_transfers`, `stock_transfer_items`, `idempotency_keys`, `audit_logs`, `outbox_events`, `refresh_families`, `refresh_sessions`, và các khóa ghép để không thể tham chiếu sai tổ chức. Bảng chuyển kho chỉ thêm ở Phase 5.
+
+Quan hệ reservation → dòng đơn trong sơ đồ là đích Phase 3. Phase 2 chưa có cột/FK `order_item_id`; #58 thêm quan hệ sau khi tạo bảng Sales, kiểm tra dữ liệu và cập nhật fixture. Tuân theo [kế hoạch migration reservation](../database/RESERVATION_MIGRATION_PLAN.md). Kho của đơn được snapshot từ kho mặc định cùng chi nhánh theo [ADR-0011](../adr/0011-warehouse-selection-for-orders.md).
 
 `STOCK_MOVEMENTS` nên là nhật ký append-only với định danh chứng từ rõ ràng. `STOCK_BALANCES` chỉ là bảng tổng hợp được cập nhật nguyên tử, không phải lịch sử giao dịch.
 
@@ -479,6 +487,8 @@ erDiagram
     }
     PAYMENTS {
         uuid id PK
+        uuid organization_id FK
+        uuid sales_order_id FK
         decimal amount
         string status
         string external_reference
@@ -521,6 +531,7 @@ erDiagram
     GOODS_RECEIPT_ITEMS }o--|| GOODS_RECEIPTS : "receipt_id"
     GOODS_RECEIPT_ITEMS }o--|| PURCHASE_ORDER_ITEMS : "purchase_item_id"
     INVOICES }o--|| SALES_ORDERS : "sales_order_id"
+    PAYMENTS }o--|| SALES_ORDERS : "organization_id, sales_order_id"
     PAYMENT_ALLOCATIONS }o--|| PAYMENTS : "payment_id"
     PAYMENT_ALLOCATIONS }o--|| INVOICES : "invoice_id"
     JOURNAL_LINES }o--|| JOURNAL_ENTRIES : "journal_entry_id"
@@ -531,6 +542,8 @@ erDiagram
 
 Một bút toán kế toán chỉ được posted khi tổng debit bằng tổng credit trong cùng loại tiền và đúng kỳ kế toán. Đối với doanh nghiệp Việt Nam, đây mới là phần mô hình kế toán nền tảng, không thay thế việc thiết kế chế độ kế toán phù hợp.
 
+Phase 3 chỉ triển khai payment thủ công liên kết trực tiếp đơn bằng khóa ghép `(organization_id, sales_order_id)` theo ADR-0014. Invoice, allocation và journal trong sơ đồ là Phase 5; payment thủ công được posted ngay trong transaction, không qua provider.
+
 ## VI. API Design — REST API v1
 
 Toàn bộ API dùng prefix `/api/v1`, JSON, OpenAPI và quy chuẩn response/error thống nhất.
@@ -539,6 +552,7 @@ Toàn bộ API dùng prefix `/api/v1`, JSON, OpenAPI và quy chuẩn response/er
 
 | Method | Endpoint                 | Mục đích            |
 | ------ | ------------------------ | ------------------- |
+| GET    | `/auth/csrf`             | Bootstrap CSRF trước đăng nhập và cấp lại token theo phiên |
 | POST   | `/auth/login`            | Đăng nhập           |
 | POST   | `/auth/refresh`          | Làm mới phiên       |
 | POST   | `/auth/logout`           | Thu hồi phiên       |
@@ -561,7 +575,7 @@ Toàn bộ API dùng prefix `/api/v1`, JSON, OpenAPI và quy chuẩn response/er
 | POST      | `/products/:id/variants` | Tạo SKU              |
 | GET/POST  | `/customers`             | Khách hàng           |
 | GET/PATCH | `/customers/:id`         | Chi tiết/cập nhật    |
-| GET/POST  | `/suppliers`             | Nhà cung cấp         |
+| GET/POST  | `/suppliers`             | Nhà cung cấp (Phase 5) |
 
 ### 3. Sales
 
@@ -574,7 +588,7 @@ Toàn bộ API dùng prefix `/api/v1`, JSON, OpenAPI và quy chuẩn response/er
 | POST     | `/sales/orders/:id/cancel`    | Hủy đơn hợp lệ       |
 | POST     | `/sales/orders/:id/shipments` | Tạo phiếu giao       |
 | POST     | `/sales/shipments/:id/post`   | Ghi nhận xuất hàng   |
-| POST     | `/sales/returns`              | Yêu cầu trả hàng     |
+| POST     | `/sales/returns`              | Yêu cầu trả hàng (Phase 5) |
 | GET      | `/sales/orders/:id/history`   | Lịch sử sự kiện      |
 
 ### 4. Inventory
@@ -585,26 +599,26 @@ Toàn bộ API dùng prefix `/api/v1`, JSON, OpenAPI và quy chuẩn response/er
 | GET      | `/inventory/movements`              | Nhật ký biến động    |
 | POST     | `/inventory/adjustments`            | Tạo phiếu điều chỉnh |
 | POST     | `/inventory/adjustments/:id/post`   | Ghi nhận điều chỉnh  |
-| POST     | `/inventory/transfers`              | Tạo phiếu chuyển kho |
-| POST     | `/inventory/transfers/:id/dispatch` | Xuất kho nguồn       |
-| POST     | `/inventory/transfers/:id/receive`  | Nhập kho đích        |
+| POST     | `/inventory/transfers`              | Tạo phiếu chuyển kho (Phase 5) |
+| POST     | `/inventory/transfers/:id/dispatch` | Xuất kho nguồn (Phase 5) |
+| POST     | `/inventory/transfers/:id/receive`  | Nhập kho đích (Phase 5) |
 | GET/POST | `/warehouses`                       | Quản lý kho          |
 
 ### 5. Purchasing, Finance & Reporting
 
 | Method   | Endpoint                         | Mục đích           |
 | -------- | -------------------------------- | ------------------ |
-| GET/POST | `/purchasing/orders`             | Purchase Orders    |
-| POST     | `/purchasing/orders/:id/approve` | Phê duyệt          |
-| POST     | `/purchasing/receipts`           | Tạo phiếu nhận     |
-| POST     | `/purchasing/receipts/:id/post`  | Nhập kho           |
-| GET/POST | `/finance/invoices`              | Hóa đơn/chứng từ   |
-| GET/POST | `/finance/payments`              | Thanh toán         |
-| POST     | `/finance/payments/:id/allocate` | Phân bổ thanh toán |
-| GET      | `/finance/receivables`           | Công nợ phải thu   |
+| GET/POST | `/purchasing/orders`             | Purchase Orders (Phase 5) |
+| POST     | `/purchasing/orders/:id/approve` | Phê duyệt (Phase 5) |
+| POST     | `/purchasing/receipts`           | Tạo phiếu nhận (Phase 5) |
+| POST     | `/purchasing/receipts/:id/post`  | Nhập kho (Phase 5) |
+| GET/POST | `/finance/invoices`              | Hóa đơn/chứng từ (Phase 5) |
+| GET/POST | `/finance/orders/:id/payments`   | Thanh toán thủ công vào đơn (Phase 3) |
+| POST     | `/finance/payments/:id/allocate` | Phân bổ vào hóa đơn (Phase 5) |
+| GET      | `/finance/receivables`           | Công nợ phải thu (Phase 5) |
 | GET      | `/reports/sales`                 | Báo cáo bán hàng   |
 | GET      | `/reports/inventory`             | Báo cáo tồn kho    |
-| GET      | `/reports/profit`                | Báo cáo lợi nhuận  |
+| GET      | `/reports/profit`                | Lợi nhuận (Phase 5, cần costing) |
 | GET      | `/audit-logs`                    | Nhật ký thao tác   |
 
 ### API Contract mẫu
@@ -625,7 +639,7 @@ POST `/api/v1/sales/orders`
 }
 ```
 
-Backend không tin giá tiền do frontend cung cấp. Server xác định giá theo price list hợp lệ, tính thuế/giảm giá dựa trên chính sách, sau đó lưu giá snapshot.
+Backend không tin giá tiền do frontend cung cấp; DTO từ chối trường giá/tổng do client cố gửi. MVP lấy `selling_price` của biến thể, snapshot vào dòng đơn, áp dụng một giảm giá theo đơn và `taxTotal=0`. Làm tròn từng dòng HALF_UP đến đồng VND trước khi cộng theo [ADR-0013](../adr/0013-pricing-discount-tax-for-mvp.md); price list nâng cao ở Phase 5.
 
 **Response — 201 Created**
 
@@ -720,7 +734,7 @@ Nếu bất kỳ SKU nào không đủ, toàn bộ transaction rollback; không 
 
 Đối với đơn nhiều SKU, cần thứ tự khóa cố định, constraint phù hợp và retry có giới hạn cho transaction conflict/deadlock. PostgreSQL hỗ trợ row-level locking, còn Prisma cung cấp các cơ chế transaction và optimistic concurrency; cú pháp sử dụng phải nhất quán với phiên bản Prisma được chọn.
 
-Đối với thanh toán, không thể đơn giản gói cả payment provider vào database transaction. Thay vào đó phải thiết kế trạng thái `PENDING → SUCCEEDED/FAILED`, xác minh webhook, idempotency và reconciliation.
+MVP ghi nhận tiền thủ công trong transaction: khóa đơn, kiểm tra trạng thái và tổng đã thu, ghi payment bất biến cùng audit và outbox theo ADR-0014. Nếu tích hợp payment provider sau MVP, cần trạng thái `PENDING → SUCCEEDED/FAILED`, xác minh webhook, idempotency và reconciliation; không giữ transaction database trong lúc gọi provider.
 
 ## VIII. UI/UX — Những màn hình phải có
 
@@ -738,7 +752,7 @@ Danh sách đơn, trạng thái, trang chi tiết, timeline sự kiện, thao t�
 
 ### CRM Workspace
 
-Hồ sơ khách hàng, lịch sử giao dịch, ghi chú, pipeline chăm sóc và phân loại nhóm khách.
+MVP: hồ sơ khách hàng, lịch sử đơn theo phạm vi và ghi chú. Pipeline, leads và phân loại nâng cao chưa thuộc MVP.
 
 Quy chuẩn UX: Desktop-first, responsive ở tablet/mobile; bảng dữ liệu có sorting, filtering, pagination; form validation rõ ràng; confirm dialog cho nghiệp vụ rủi ro; accessible keyboard navigation; và mọi trạng thái loading/empty/error đều có thiết kế.
 
@@ -944,15 +958,19 @@ Ghi chú học tập: với mục tiêu học Backend từ đầu, nên tự tri
 Kết quả rà soát baseline v1.0. Không điểm nào cản trở việc bắt đầu Phase 0; mỗi điểm được chốt bằng ADR hoặc
 cập nhật tài liệu trước khi phase liên quan bắt đầu.
 
+ADR-0010–0015 đã ghi quyết định; các issue triển khai vẫn phải hoàn thành acceptance criteria và test. Bảng dưới đây phân biệt làm rõ thiết kế với hoàn thành mã nguồn.
+
 | Điểm | Cần chốt trước | Issue |
 | --- | --- | --- |
-| Nhãn phase của Purchasing/Finance/HRM trong bảng module lệch với roadmap; danh sách module trong sơ đồ kiến trúc khác bảng 9 module | Phase 0 | `P0-DOC-001` |
+| Đã thống nhất 10 business module ở mục II–III, phase của từng chức năng và các endpoint sau MVP | Đã làm rõ trong tài liệu | `P0-DOC-001` |
 | Bảng chuyển trạng thái đơn hàng; tách trạng thái đơn / giao hàng / thanh toán | Phase 0 | `P0-DOC-002` |
 | Ma trận quyền (role × permission × scope) | Phase 1 | `P0-DOC-003` |
-| Chiến lược CSRF và cookie giữa Next.js và NestJS | Phase 1 | `P0-ADR-010` |
-| Đơn hàng giữ hàng từ kho nào; chi nhánh có bán từ kho chi nhánh khác không | Phase 2 | `P0-ADR-011` |
-| Costing (bình quân gia quyền / FIFO) và phạm vi `/reports/profit` | Phase 2 | `P0-ADR-012` |
-| Giá, giảm giá, thuế ở MVP (ERD chưa có price list) | Phase 3 | `P0-ADR-013` |
-| Ghi nhận thanh toán tối giản ở Phase 3 khi bảng Finance thuộc Phase 5 | Phase 3 | `P0-ADR-014` |
+| Cookie/CSRF và tranh chấp refresh đã chốt ở ADR-0010 | Triển khai/test Phase 1 | `P0-ADR-010` |
+| Một kho mặc định cùng chi nhánh, snapshot vào đơn (ADR-0011) | Triển khai Phase 2–3 | `P0-ADR-011` |
+| Hoãn costing và `/reports/profit` tới Phase 5 (ADR-0012) | Đã chốt phạm vi MVP | `P0-ADR-012` |
+| Giá biến thể, giảm giá theo đơn, thuế 0 (ADR-0013) | Triển khai/test Phase 3 | `P0-ADR-013` |
+| Finance tối giản từ Phase 3, không hoàn tiền ở MVP (ADR-0014) | Triển khai/test Phase 3 | `P0-ADR-014` |
+| pnpm workspaces/Turborepo (ADR-0015); ghim phiên bản khi scaffold | Triển khai Phase 0 | `P0-ADR-015` |
+| Reservation Phase 2 độc lập; FK dòng đơn bổ sung ở #58 theo kế hoạch migration | Triển khai/test Phase 2–3 | `P2-DB-001`, `P3-DB-001` |
 | Bảng `document_sequences` và các CHECK constraint tồn kho | Phase 2 | `P2-DB-001` |
 | Ngữ nghĩa shipment post (giảm `on_hand` và `reserved`, tiêu thụ reservation) | Phase 3 | `P3-SAL-003` |

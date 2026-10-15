@@ -25,13 +25,14 @@ NexusERP không nhằm làm ra thêm một bộ giao diện CRUD. Dự án phả
 | Module | Nội dung |
 | --- | --- |
 | IAM & Organization | Đăng nhập, refresh token rotation, user, role, permission, chi nhánh, audit log |
-| Catalog | Sản phẩm, biến thể (SKU), kho |
-| Inventory | Tồn đầu kỳ, stock ledger, đặt trước (reservation), điều chỉnh có phê duyệt |
+| Catalog | Sản phẩm, biến thể (SKU) |
+| Inventory | Kho, tồn đầu kỳ, stock ledger, đặt trước (reservation), điều chỉnh có phê duyệt |
 | CRM | Khách hàng |
-| Sales | Đơn hàng, xác nhận và giữ hàng, giao hàng, hủy trước khi xuất kho, ghi nhận thanh toán vận hành |
+| Sales | Đơn hàng, xác nhận và giữ hàng, giao đủ một lần, hủy trước khi xuất kho |
+| Finance (tối giản) | Ghi nhận thanh toán thủ công vào đơn từ Phase 3; chưa có hóa đơn, công nợ, hoàn tiền |
 | Reporting | Dashboard doanh thu, đơn hàng, tồn kho; audit timeline; export |
 
-Purchasing, chuyển kho, trả hàng, Finance, HRM và cách ly tenant nằm sau mốc MVP. Chi tiết trong [SCOPE](docs/product/SCOPE.md) và [roadmap](docs/roadmap/PHASE_PLAN.md).
+Purchasing, chuyển kho, giao một phần, trả hàng, Finance đầy đủ, HRM và báo cáo lợi nhuận nằm ở Phase 5; cách ly tenant đầy đủ nằm ở Phase 6. Chi tiết trong [SCOPE](docs/product/SCOPE.md) và [roadmap](docs/roadmap/PHASE_PLAN.md).
 
 ## Kiến trúc
 

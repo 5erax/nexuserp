@@ -34,7 +34,7 @@ Sản phẩm, biến thể, SKU, kho; tồn đầu kỳ, stock ledger; stock bal
 
 ## Phase 3 — CRM Core & Sales
 
-Khách hàng, đơn bán, snapshot giá; confirm → reserve → ship; hủy trước xuất kho; ghi nhận thanh toán vận hành.
+Khách hàng, đơn bán, snapshot giá; confirm → reserve → giao đủ một lần; hủy trước xuất kho; Finance tối giản ghi nhận thanh toán thủ công vào đơn. Chưa có hóa đơn, công nợ hay hoàn tiền.
 
 **Definition of Done:** hoàn thành end-to-end một đơn hàng, tồn kho thay đổi chính xác và mọi sự kiện đều truy vết được.
 

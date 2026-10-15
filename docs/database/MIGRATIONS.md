@@ -21,3 +21,7 @@ CHECK/trigger/index đặc biệt viết trực tiếp trong migration SQL. Base
 SQL baseline bọc trong transaction. Migration tiếp theo phải ghi rõ tác động dữ liệu và rollback plan; ưu tiên roll-forward. Không chạy DROP/RESET trên dữ liệu thật. Khôi phục từ backup hoặc revert migration chỉ thực hiện sau khi kiểm tra dữ liệu và schema tương thích.
 
 Migration `20261015060000_iam` chỉ thêm bảng IAM, index và CHECK; không sửa/xóa dữ liệu organization/branch. Rollback ứng dụng có thể giữ các bảng chưa dùng; không DROP user/session để rollback code. Sửa lỗi schema bằng migration roll-forward đã review. Integration test kiểm tra email normalize, cấm mật khẩu thô, FK khác tổ chức, seed idempotent và successor refresh cùng family. Audit tới sau schema IAM. Thứ tự reservation theo [RESERVATION_MIGRATION_PLAN](RESERVATION_MIGRATION_PLAN.md).
+
+Migration `20261016003000_catalog_inventory` chỉ thêm bảng, index, CHECK và trigger; không sửa dữ liệu IAM/audit. Chưa thêm FK tới Sales. Giá bán dùng Decimal(20,0), số lượng Decimal(18,3), giá nhập tùy chọn Decimal(20,6) theo ADR-0012. Ledger chặn UPDATE/DELETE; SKU có stock history không đổi được. Rollback ứng dụng giữ nguyên các bảng này; sửa schema bằng migration tiếp theo, không xóa ledger.
+
+Hai partial unique index (kho mặc định đang hoạt động và tồn đầu kỳ) dùng preview `partialIndexes` của Prisma 7.10 đã ghim. Predicate raw giữ dạng PostgreSQL trả về khi introspect để drift check không tạo lại index tương đương. Khi nâng Prisma phải kiểm tra lại introspection/diff và các test constraint, không chỉ regenerate client.

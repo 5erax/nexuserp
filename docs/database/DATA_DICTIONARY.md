@@ -1,6 +1,6 @@
 # Từ điển dữ liệu — Phase 0–4
 
-IAM sở hữu organization/branch và schema IAM trong migration `20261015060000_iam`. Audit append-only được thêm bằng `20261015063000_audit`; Catalog/Inventory/Sales vẫn là thiết kế đích. API quản trị được triển khai sau phần auth.
+IAM và API quản trị đã triển khai. Audit append-only nằm trong `20261015063000_audit`; Catalog/Inventory có schema từ `20261016003000_catalog_inventory`, còn API nghiệp vụ và Sales là các bước tiếp theo.
 
 | Bảng.cột | Kiểu / constraint | Ý nghĩa |
 | --- | --- | --- |
@@ -25,7 +25,7 @@ Các bảng dưới đây chưa được coi đã migrate chỉ vì có trong di
 
 - Entity: `id UUID PK`, `organization_id UUID NOT NULL FK organizations RESTRICT`, `created_at timestamptz(3) DEFAULT now()`, `updated_at timestamptz(3)` do ứng dụng cập nhật; unique `(organization_id,id)` cho FK ghép. Bảng append-only bỏ updated_at; bảng liên kết ghi cột riêng dưới đây.
 - Mọi FK entity scoped dùng `(organization_id,parent_id) REFERENCES parent(organization_id,id) ON DELETE RESTRICT`; không FK đơn ID xuyên tenant. Ngoại lệ global permissions không organization. Bảng con cần cùng branch tham chiếu unique `(organization_id,branch_id,id)` của parent. Index FK theo truy vấn, không dựa việc PostgreSQL tự tạo index FK.
-- Tiền VND `Decimal(20,0)`; quantity `Decimal(18,3)`; giá và tổng không âm. Không floating-point trong phép tính. NULL unit_cost là chưa biết, 0 là được ghi rõ bằng 0.
+- Giá bán và tổng tiền VND `Decimal(20,0)`; quantity `Decimal(18,3)`; không âm theo quy tắc. Unit cost gốc là `Decimal(20,6)` nullable theo ADR-0012, chưa dùng để định giá tồn kho. Không floating-point trong phép tính. NULL unit_cost là chưa biết, 0 là được ghi rõ bằng 0.
 - Tài khoản/chứng từ có lịch sử không xóa cứng; status allowlist CHECK, posted chỉ append. Không CASCADE xóa lịch sử audit/movement/payment. Mọi update nghiệp vụ đều qua module sở hữu.
 - Chuỗi mô tả `varchar(200)`, code `varchar(64)` trừ khi ghi khác; trim API. JSON payload allowlist, tối đa 16 KiB, không password/token hoặc PII không cần thiết.
 
@@ -53,7 +53,7 @@ Refresh session scope thông qua family; session expiry phải bằng family exp
 | Bảng | Cột bổ sung / kiểu / constraint | Unique và index | FK/xóa và rule |
 | --- | --- | --- | --- |
 | products | name varchar(200); category varchar(100) nullable; description varchar(2000) nullable; status ACTIVE/INACTIVE | unique(org,id), index(org,status,name) | Org RESTRICT; deactivate thay xóa |
-| product_variants | product_id UUID; sku varchar(64) uppercase trim; name varchar(200); selling_price Decimal(20,0)>=0; status ACTIVE/INACTIVE | unique(org,sku), unique(org,id), index(org,product_id,status) | Product FK ghép RESTRICT; SKU có movement không đổi, INV-001/010 |
+| product_variants | product_id UUID; sku varchar(64) uppercase trim; name varchar(200); selling_price Decimal(20,0)>=0; low_stock_threshold Decimal(18,3)>=0 default0; status ACTIVE/INACTIVE | unique(org,sku), unique(org,id), index(org,product_id,status) | Product FK ghép RESTRICT; SKU có movement không đổi, INV-001/010 |
 
 ## Inventory — Phase 2, chủ sở hữu inventory
 
@@ -62,9 +62,9 @@ Refresh session scope thông qua family; session expiry phải bằng family exp
 | warehouses | branch_id UUID; code varchar(32); name; status ACTIVE/INACTIVE; is_default boolean default false | unique(org,code), unique(org,branch_id,id); partial unique(org,branch_id) WHERE is_default AND status='ACTIVE'; index(org,branch_id,status) | Branch FK ghép RESTRICT; chuyển default khóa branch, không fallback khác branch |
 | stock_balances | warehouse_id,variant_id UUID; on_hand/reserved Decimal(18,3) default0; version int default0 | unique(org,warehouse_id,variant_id), unique(org,id), index(org,variant_id) | Warehouse/variant FK ghép RESTRICT; CHECK on_hand>=0, reserved>=0, reserved<=on_hand, version>=0 |
 | stock_reservations | balance_id,reference_id UUID; quantity Decimal(18,3)>0; status ACTIVE/RELEASED/CONSUMED | unique(org,balance_id,reference_id); index(org,balance_id,status); Phase3 index(org,order_item_id) | Balance FK ghép RESTRICT; Phase2 chưa có order_item_id; Phase3 nullable FK order item RESTRICT, CHECK ACTIVE yêu cầu liên kết |
-| stock_movements | warehouse_id,variant_id UUID; quantity_delta Decimal(18,3) !=0; unit_cost Decimal(20,0) nullable >=0; reference_type OPENING/ADJUSTMENT_IN/ADJUSTMENT_OUT/SHIPMENT_OUT; reference_id UUID; created_by UUID | unique(org,reference_type,reference_id,variant_id); partial unique(org,warehouse_id,variant_id) WHERE type=OPENING; index(org,warehouse_id,created_at,id) | Warehouse/variant/actor FK ghép RESTRICT; SQL trigger reject UPDATE/DELETE; unit_cost chỉ nullable inbound, outbound luôn null |
+| stock_movements | warehouse_id,variant_id UUID; quantity_delta Decimal(18,3) !=0; unit_cost Decimal(20,6) nullable >=0; reference_type OPENING/ADJUSTMENT_IN/ADJUSTMENT_OUT/SHIPMENT_OUT; reference_id UUID; created_by UUID | unique(org,reference_type,reference_id,variant_id); partial unique(org,warehouse_id,variant_id) WHERE type=OPENING; index(org,warehouse_id,created_at,id) | Warehouse/variant/actor FK ghép RESTRICT; SQL trigger reject UPDATE/DELETE; unit_cost chỉ nullable inbound, outbound luôn null |
 | stock_adjustments | warehouse_id,created_by UUID; approved_by UUID nullable; kind OPENING/ADJUSTMENT; status DRAFT/APPROVED/POSTED/CANCELLED; reason varchar(1000) NOT NULL; approval_threshold Decimal(18,3) default10; approved_at/posted_at nullable | index(org,warehouse_id,status,created_at), unique(org,id) | Warehouse/actor FK ghép RESTRICT; CHECK approved_by != created_by; threshold>=0; application kiểm tra tổng abs delta và state |
-| stock_adjustment_items | adjustment_id,variant_id UUID; quantity_delta Decimal(18,3) !=0; unit_cost Decimal(20,0) nullable>=0 | unique(org,adjustment_id,variant_id), index(org,variant_id) | Adjustment/variant FK ghép RESTRICT; OPENING chỉ delta>0, command kiểm tra ≥1 item |
+| stock_adjustment_items | adjustment_id,variant_id UUID; quantity_delta Decimal(18,3) !=0; unit_cost Decimal(20,6) nullable>=0 | unique(org,adjustment_id,variant_id), index(org,variant_id) | Adjustment/variant FK ghép RESTRICT; OPENING chỉ delta>0, command kiểm tra ≥1 item |
 
 Movement append và balance update cùng transaction; reserve/release không movement vì không thay on_hand. Reconciliation read-only so sánh ledger và ACTIVE reservations. Opening chỉ khi chưa có movement trên cặp kho/SKU, không ghi đè tồn. Posted document trigger/policy giữ nguyên dữ liệu gốc; cleanup test phải dùng database test có ownership, không mở API sửa ledger để hỗ trợ test.
 
@@ -90,7 +90,7 @@ Receipt bất biến sau commit, không status do client sửa. Khóa order rồ
 | Bảng / phase / owner | Cột và constraint | Index/xóa |
 | --- | --- | --- |
 | idempotency_keys / 2 / platform | id UUID PK; organization_id,actor_id UUID; command varchar(200) gồm method/route/resource; key UUID; request_hash char(64); response jsonb; response_status int; created_at,expires_at timestamptz(3); CHECK expiry>created; response không chứa secret | unique(org,actor,command,key); index(expires_at); org/actor FK RESTRICT; xóa expired theo batch |
-| document_sequences / 3 / platform | organization_id UUID; kind varchar(16) SO/ADJ/SHIP; year int; next_value bigint CHECK>0 | PK(org,kind,year); org FK RESTRICT; transaction UPSERT increment, không count+1, không tái dùng số đã phát hành |
+| document_sequences / 2–3 / platform | organization_id UUID; kind varchar(16) SO/ADJ/SHIP; year int; next_value bigint CHECK>0 | PK(org,kind,year); org FK RESTRICT; transaction UPSERT increment, không count+1, không tái dùng số đã phát hành |
 | outbox_events / 3 / platform | id UUID PK; organization_id UUID; event_type varchar(100); aggregate_id UUID; payload jsonb allowlist; attempts int default0 CHECK>=0; available_at/created_at timestamptz(3); published_at nullable; last_error varchar(200) nullable đã sanitize | index(available_at,id) WHERE published_at IS NULL; org FK RESTRICT; dispatcher SKIP LOCKED, retry bounded, event ID ổn định |
 
 Reporting Phase 4 không thêm bảng; aggregate chỉ đọc dữ liệu đúng scope, doanh thu theo đơn FULFILLED/posted_at, tiền thu theo received_at. Không tính profit hoặc coi order grandTotal là tiền đã thu.

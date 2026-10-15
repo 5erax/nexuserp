@@ -1,6 +1,6 @@
 # Từ điển dữ liệu — Phase 0–4
 
-IAM sở hữu hai bảng, chưa có API quản trị công khai.
+IAM sở hữu organization/branch và schema IAM trong migration `20261015060000_iam`. Audit và các module sau vẫn là thiết kế đích; chưa có API quản trị công khai ở phần schema này.
 
 | Bảng.cột | Kiểu / constraint | Ý nghĩa |
 | --- | --- | --- |
@@ -33,14 +33,14 @@ Các bảng dưới đây chưa được coi đã migrate chỉ vì có trong di
 
 | Bảng | Cột bổ sung / kiểu / constraint | Unique và index | Xóa và rule |
 | --- | --- | --- | --- |
-| users | email varchar(254) lowercase/trim CHECK; display_name varchar(200); password_hash varchar(512) NOT NULL; status varchar(16) ACTIVE/INACTIVE/LOCKED | unique(org,email), unique(org,id); index(org,status) | Org RESTRICT; IAM-001/002; không trả hash qua API |
+| users | email varchar(254) lowercase/trim CHECK; display_name varchar(200); password_hash varchar(512) NOT NULL CHECK Argon2id format; must_change_password boolean default false; status varchar(16) ACTIVE/INACTIVE/LOCKED | unique(org,email), unique(org,id); index(org,status) | Org RESTRICT; IAM-001/002; không trả hash qua API; reset đặt cờ buộc đổi mật khẩu |
 | roles | code varchar(64); name varchar(200); is_system boolean default false | unique(org,code), unique(org,id) | Org RESTRICT; system grant/code bất biến qua API |
 | permissions | id UUID PK; code varchar(100) unique; allowed_scopes varchar(32) NOT NULL | unique(code) | Global catalog, không xóa permission đang được dùng; seed immutable |
 | user_roles | organization_id,user_id,role_id UUID; created_at timestamptz(3) | PK(user_id,role_id); index(org,role_id) | FK ghép user/role RESTRICT, xóa assignment có kiểm tra last admin IAM-006 |
 | role_permissions | organization_id,role_id,permission_id UUID; scope varchar(8) CHECK ORG/BRANCH/OWN | PK(role_id,permission_id); index(permission_id) | Role FK ghép RESTRICT; permission FK RESTRICT; scope phải thuộc allowed_scopes ở application |
 | user_branch_access | organization_id,user_id,branch_id UUID; created_at timestamptz(3) | PK(user_id,branch_id); index(org,branch_id) | User/branch FK ghép RESTRICT; IAM-004 |
 | refresh_families | user_id UUID; expires_at timestamptz(3); revoked_at timestamptz(3) nullable; created_at; không updated_at | unique(org,id), unique(id,user_id); index(user_id,expires_at) | User FK ghép RESTRICT; expires tuyệt đối login+7d, CHECK expires_at>created_at |
-| refresh_sessions | family_id UUID; token_hash char(64) SHA-256 lowercase; expires_at; rotated_at/revoked_at nullable; replaced_by UUID nullable; ip varchar(64) nullable; user_agent varchar(512) nullable; created_at; không organization/updated_at | token_hash unique; unique(family_id,id); index(family_id,expires_at); replaced_by unique | Family FK RESTRICT; successor FK(family_id,replaced_by) cùng family RESTRICT; CHECK replaced_by và rotated_at cùng null hoặc cùng có; không tự trỏ |
+| refresh_sessions | family_id UUID; token_hash char(64) SHA-256 lowercase; expires_at; rotated_at/revoked_at nullable; replaced_by UUID nullable; ip varchar(64) nullable; user_agent varchar(512) nullable; created_at; không organization/updated_at | token_hash unique; unique(family_id,id), unique(family_id,replaced_by); index(family_id,expires_at) | Family FK RESTRICT; successor FK(family_id,replaced_by) cùng family RESTRICT; CHECK replaced_by và rotated_at cùng null hoặc cùng có; không tự trỏ |
 
 Refresh session scope thông qua family; session expiry phải bằng family expiry được application kiểm tra trong transaction. Metadata IP/UA chỉ chẩn đoán có giới hạn, không chứng minh cùng người dùng; không log giá trị trong HTTP log. Giữ token hash cũ đến khi family hết hạn; dọn expiry theo batch mà không xóa family trước sessions, không xóa audit cùng cleanup.
 

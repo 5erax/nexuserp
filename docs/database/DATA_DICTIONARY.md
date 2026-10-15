@@ -1,6 +1,6 @@
 # Từ điển dữ liệu — Phase 0–4
 
-IAM sở hữu organization/branch và schema IAM trong migration `20261015060000_iam`. Audit và các module sau vẫn là thiết kế đích; chưa có API quản trị công khai ở phần schema này.
+IAM sở hữu organization/branch và schema IAM trong migration `20261015060000_iam`. Audit append-only được thêm bằng `20261015063000_audit`; Catalog/Inventory/Sales vẫn là thiết kế đích. API quản trị được triển khai sau phần auth.
 
 | Bảng.cột | Kiểu / constraint | Ý nghĩa |
 | --- | --- | --- |
@@ -46,7 +46,7 @@ Refresh session scope thông qua family; session expiry phải bằng family exp
 
 ## Audit — Phase 1, chủ sở hữu audit
 
-`audit_logs` append-only: entity common fields trừ updated_at; `branch_id UUID nullable`, `actor_id UUID nullable`, `action varchar(100)`, `entity_type varchar(64)`, `entity_id UUID nullable`, `request_id varchar(64)`, `changes jsonb`. FK ghép branch/actor RESTRICT. Index `(org,created_at DESC,id DESC)`, `(org,branch_id,created_at DESC)`, `(org,entity_type,entity_id)`. Nullable branch là tổ chức, không hiển thị cho scope BRANCH. Actor null chỉ cho system event đã định danh action; không ghi password/token, không JSON dump toàn DTO. Mutation và audit dùng cùng transaction. Audit failed auth chỉ có org khi resolve được org; nếu không có thì structured security log không chứa credential. Retention demo chưa tự xóa, trước production phải chốt retention trong ADR vận hành.
+`audit_logs` append-only: entity common fields trừ updated_at; `branch_id UUID nullable`, `actor_id UUID nullable`, `action varchar(100)`, `entity_type varchar(64)`, `entity_id UUID nullable`, `request_id varchar(64)`, `ip varchar(64) nullable`, `user_agent varchar(512) nullable`, `changes jsonb` tối đa 16 KiB. FK ghép branch/actor RESTRICT. Index `(org,created_at,id)`, `(org,branch_id,created_at)`, `(org,entity_type,entity_id)` có thể scan ngược cho timeline DESC. Nullable branch là tổ chức, không hiển thị cho scope BRANCH. Actor null cho system event hoặc failed login không resolve được user; không ghi password/token, không JSON dump toàn DTO. Mutation và audit dùng cùng transaction. Audit failed auth chỉ có org khi resolve được org; nếu không có thì structured security log không chứa credential. Trigger chặn UPDATE/DELETE; retention demo chưa tự xóa, trước production phải chốt retention trong ADR vận hành.
 
 ## Catalog — Phase 2, chủ sở hữu catalog
 

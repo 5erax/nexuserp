@@ -210,11 +210,21 @@ describe('IAM auth security on PostgreSQL', () => {
       .expect(403);
     await prisma.userRole.createMany({ data: assignments });
   });
-  async function concurrent(value: Session, paths: string[]) {
+  async function concurrent(
+    value: Session,
+    paths: string[],
+    passwordInput?: { currentPassword: string; newPassword: string },
+  ) {
     let pending: Promise<TestResponse[]> | undefined;
     await prisma.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT id FROM refresh_families WHERE id=${value.familyId}::uuid FOR UPDATE`;
-      pending = Promise.all(paths.map((path) => mutate(path, value).then((response) => response)));
+      pending = Promise.all(
+        paths.map((path) =>
+          mutate(path, value)
+            .send(path === 'password' ? passwordInput : undefined)
+            .then((response) => response),
+        ),
+      );
       let waiters = 0;
       for (let attempt = 0; attempt < 80; attempt++) {
         await tx.$queryRaw`SELECT pg_stat_clear_snapshot()::text`;
@@ -434,5 +444,37 @@ describe('IAM auth security on PostgreSQL', () => {
     } finally {
       await isolated.close();
     }
+  });
+  it('IAM-007 password change wins against concurrent refresh and revokes every device', async () => {
+    const value = await session();
+    const other = await session();
+    await mutate('password', value)
+      .send({ currentPassword: 'incorrect', newPassword: 'new-correct-horse-battery' })
+      .expect(401);
+    await prisma.user.update({ where: { id: userId }, data: { mustChangePassword: true } });
+    await request(app.getHttpServer())
+      .get('/api/v1/security-probe')
+      .set('Cookie', cookies(value))
+      .expect(403);
+    const responses = await concurrent(value, ['refresh', 'password'], {
+      currentPassword: password,
+      newPassword: 'new-correct-horse-battery',
+    });
+    expect(responses[1]!.status).toBe(200);
+    expect([200, 401]).toContain(responses[0]!.status);
+    for (const candidate of [value, other])
+      await request(app.getHttpServer())
+        .get('/api/v1/auth/me')
+        .set('Cookie', cookies(candidate))
+        .expect(401);
+    expect(await prisma.refreshFamily.count({ where: { userId, revokedAt: null } })).toBe(0);
+    expect(
+      (await prisma.user.findUniqueOrThrow({ where: { id: userId } })).mustChangePassword,
+    ).toBe(false);
+    const next = await auth.login(
+      { organizationCode, email, password: 'new-correct-horse-battery' },
+      context,
+    );
+    expect(next.familyId).toBeTruthy();
   });
 });

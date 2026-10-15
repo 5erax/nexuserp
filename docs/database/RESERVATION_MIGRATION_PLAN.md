@@ -27,4 +27,4 @@ Sau #58, fixture cho reservation ACTIVE phải có dòng đơn hợp lệ; cập
 - FK chặn orphan/cross-organization; CHECK chặn tạo ACTIVE với `order_item_id=NULL` sau Phase 3.
 - Bộ concurrency/đối soát Phase 2 được cập nhật fixture và vẫn pass sau Phase 3.
 
-Đây là kế hoạch cho #46/#58; repository hiện chưa có schema hay migration để chạy các ca này.
+Migration `20261016003000_catalog_inventory` thực thi phần Phase 2; inventory-schema.integration-spec.ts kiểm chứng quantity/FK/unique trên PostgreSQL. Schema chưa có cột/FK order_item_id. Phần preflight và ràng buộc Phase 3 vẫn thuộc #58; không coi phần đó đã triển khai.

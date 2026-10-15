@@ -12,7 +12,7 @@ FIFO cần lớp giá vốn; bình quân di động cần quy tắc định giá
 
 - MVP không tính lợi nhuận, giá trị tồn kho hoặc COGS. Không công bố `/reports/profit` trong OpenAPI MVP hay UI; không gọi doanh thu là lợi nhuận.
 - Movement nhập (`OPENING`, `ADJUSTMENT_IN`) có `unit_cost NUMERIC(20,6)` nullable, không âm nếu có. `NULL` nghĩa là chưa biết, khác với giá vốn bằng 0; API dùng chuỗi thập phân.
-- Không tính bình quân trên balance và không suy ra giá vốn xuất kho từ giá bán. Movement `SHIPMENT` có `unit_cost=NULL` ở MVP; dữ liệu này chưa đủ để hứa có báo cáo lợi nhuận lịch sử chính xác.
+- Không tính bình quân trên balance và không suy ra giá vốn xuất kho từ giá bán. Movement `SHIPMENT_OUT` có `unit_cost=NULL` ở MVP; dữ liệu này chưa đủ để hứa có báo cáo lợi nhuận lịch sử chính xác.
 - Phase 5 phải có ADR chọn phương pháp costing, cách xử lý thiếu giá vốn và cách nâng cấp dữ liệu lịch sử trước khi viết báo cáo. Không sửa movement đã posted để backfill ngầm.
 
 ## Hệ quả

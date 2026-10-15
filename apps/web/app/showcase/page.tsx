@@ -1,6 +1,7 @@
 'use client';
 import { EmptyState, ErrorState, LoadingState } from '@nexus/ui/states';
 import { useState } from 'react';
+import { Input } from '@nexus/ui/components/input';
 export default function Showcase() {
   const [retried, setRetried] = useState(false);
   return (
@@ -11,6 +12,10 @@ export default function Showcase() {
         <p>Trang mẫu cho loading, dữ liệu rỗng và lỗi có thể thử lại.</p>
       </div>
       <div className="showcase-list">
+        <label htmlFor="sample-input">
+          Ô nhập dùng chung (shadcn/ui)
+          <Input id="sample-input" placeholder="Tên chi nhánh" />
+        </label>
         <LoadingState label="Đang tải dữ liệu" />
         <EmptyState
           title="Chưa có đơn hàng"

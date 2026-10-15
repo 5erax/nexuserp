@@ -64,4 +64,4 @@ Org/user dùng NO KEY UPDATE để không chặn KEY SHARE của audit FK khi ch
 - Chỉ dùng dữ liệu mẫu. Không log cookie, token, password hoặc hash; audit không lưu nguyên request chứa secret.
 - Quota trong bộ nhớ một process; cần shared store trước khi tăng replica. Native Next rewrite chỉ dùng local; production cần ingress tin cậy, HTTPS/TLS và secret riêng theo CONFIGURATION. CI không chứng minh cấu hình tên miền production.
 - Khóa organization serialize quản trị phù hợp MVP, chưa đo tải lớn. Audit append-only vẫn phụ thuộc quyền DB: chủ DB có thể đổi trigger; chưa có kho audit bên ngoài chống sửa bởi DBA.
-- Backend IAM có test; UI phiên #43, Inventory/Sales và deployment demo chưa hoàn thành. Không coi các thiết kế planned là biện pháp đã hoạt động.
+- UI phiên: apps/web/lib/auth/api.ts phối hợp promise/Web Locks, thử request gốc trước refresh, giữ 409 cho cả các request đang chờ, không retry refresh khi mất response. session.test.tsx và e2e/auth.spec.ts kiểm chứng hai tab, cookie CSRF, mất response và logout. Inventory/Sales và deployment demo chưa hoàn thành; không coi thiết kế planned là biện pháp đã hoạt động.

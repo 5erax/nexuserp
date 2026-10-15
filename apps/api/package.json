@@ -17,6 +17,7 @@
     "db:seed": "prisma db seed",
     "db:check": "prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --exit-code",
     "sessions:prune": "ts-node scripts/prune-sessions.ts",
+    "iam:bootstrap": "ts-node scripts/bootstrap-iam.ts",
     "openapi": "ts-node scripts/export-openapi.ts"
   },
   "dependencies": {

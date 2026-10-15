@@ -58,6 +58,12 @@ Profile `dev` dùng hot reload cho API source, web app/messages và shared UI. K
 
 `docker compose --profile app down` dừng container và giữ volume database. `docker compose --profile app down -v` **xóa dữ liệu local**; chỉ dùng khi chủ động reset demo/test. Script khởi tạo database test chỉ chạy khi volume mới; nếu volume đã có từ trước, tạo `nexuserp_test` thủ công.
 
+## Khởi tạo chủ tài khoản
+
+`pnpm db:seed` chỉ tạo catalog permission/role. Để tạo tổ chức mới và Business Owner đầu tiên, đặt bốn biến môi trường BOOTSTRAP_ORGANIZATION_CODE, BOOTSTRAP_ORGANIZATION_NAME, BOOTSTRAP_EMAIL, BOOTSTRAP_PASSWORD rồi chạy `pnpm --filter @nexus/api iam:bootstrap`. Mật khẩu 12–128 ký tự, không có mặc định; tránh lưu vào shell history/file được Git theo dõi. Lệnh chỉ tạo mới trong một transaction, từ chối organization code đã tồn tại, không ghi đè tài khoản và chỉ in UUID. Lần login đầu buộc đổi mật khẩu. Mở `/login` qua origin web được cấu hình.
+
+shadcn/ui dùng cấu hình monorepo trong apps/web và packages/ui; Tailwind v4 để trống config. Thêm component từ apps/web bằng `pnpm dlx shadcn@4.21.5 add <component>` rồi kiểm tra dependency được khai báo ở package sở hữu source (shared Input và cn nằm trong packages/ui). Giữ tokens hiện có; không ghi đè CSS toàn app. Tham chiếu [hướng dẫn monorepo](https://ui.shadcn.com/docs/monorepo).
+
 ## Kiểm chứng trước khi mở PR
 
 ```sh
@@ -82,6 +88,8 @@ pnpm test:e2e
 ```
 
 Smoke test kiểm tra proxy tới PostgreSQL, axe accessibility, retry bằng bàn phím, màn hình 390px và hiển thị lỗi mạng/requestId. API integration kiểm chứng auth/CSRF/rotation thật; chưa coi UI nghiệp vụ Sales/Inventory đã được kiểm chứng.
+
+Playwright global setup tạo một tổ chức E2E mới bằng CLI bootstrap và mật khẩu ngẫu nhiên trong database mà API đang dùng; không dùng hoặc reset tài khoản có sẵn. Ở local, fixture được giữ cùng audit để không phá tính append-only; chỉ chạy với database phát triển. CI dùng database `_test` tạm, API đã build với NODE_ENV=test cho HTTP loopback, web dùng production build. Secure cookie production được kiểm chứng riêng bởi auth integration. Browser test có login sai/đúng, buộc đổi mật khẩu, refresh hai tab (một request refresh), logout, 429 và axe cho form.
 
 ## Xử lý lỗi thường gặp
 

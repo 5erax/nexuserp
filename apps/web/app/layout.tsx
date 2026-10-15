@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Providers } from './providers';
+import { WorkspaceNavigation } from '../components/workspace-navigation';
 import messages from '../messages/vi.json';
 import './globals.css';
 export const metadata: Metadata = {
@@ -27,6 +28,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <nav aria-label="Điều hướng chính">
                 <Link href="/">{messages.overview}</Link>
                 <Link href="/showcase">{messages.components}</Link>
+                <WorkspaceNavigation />
               </nav>
               <div className="phase-note">
                 <span className="small-label">LỘ TRÌNH</span>

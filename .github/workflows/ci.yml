@@ -26,7 +26,7 @@ jobs:
       TURBO_TELEMETRY_DISABLED: 1
       JWT_SECRET: foundation_ci_jwt_key_only_not_for_deployment
       CSRF_SECRET: foundation_ci_csrf_key_only_not_for_deployment
-      WEB_ORIGIN: https://localhost:3000
+      WEB_ORIGIN: http://127.0.0.1:3000
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -46,9 +46,9 @@ jobs:
       - run: pnpm audit:production
       - run: pnpm build
       - run: pnpm exec playwright install --with-deps chromium
-      - name: Start production API and web
+      - name: Start built API and production web for browser tests
         run: |
-          NODE_ENV=production pnpm --filter @nexus/api start > /tmp/nexus-api.log 2>&1 &
+          NODE_ENV=test pnpm --filter @nexus/api start > /tmp/nexus-api.log 2>&1 &
           pnpm --filter @nexus/web start > /tmp/nexus-web.log 2>&1 &
           for i in $(seq 1 60); do
             if curl --fail --silent http://127.0.0.1:3000/api/v1/health/ready; then exit 0; fi

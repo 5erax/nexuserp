@@ -30,6 +30,43 @@ body {
   gap: 0.4rem;
   font-weight: 600;
 }
+.form-stack .catalog-fields {
+  display: grid;
+  gap: 1.25rem;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+.form-stack textarea {
+  font: inherit;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.75rem;
+  resize: vertical;
+  min-height: 100px;
+}
+.catalog-content .page-heading,
+.catalog-content dialog p,
+.catalog-description {
+  overflow-wrap: anywhere;
+}
+.catalog-description {
+  white-space: pre-wrap;
+}
+.catalog-variants table {
+  min-width: 900px;
+}
+.catalog-variants td:first-child,
+.catalog-variants td:nth-child(3),
+.catalog-variants .actions button {
+  white-space: nowrap;
+}
+.catalog-variants .actions {
+  flex-wrap: nowrap;
+}
 .form-stack input {
   font-weight: 400;
   min-height: 44px;
@@ -79,6 +116,7 @@ select {
   min-height: 44px;
 }
 select:focus-visible,
+textarea:focus-visible,
 input:focus-visible {
   outline: 3px solid var(--accent);
   outline-offset: 3px;

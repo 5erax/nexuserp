@@ -15,13 +15,19 @@ function SessionLinks() {
   return (
     <>
       <Link href="/workspace">{messages.auth.workspaceTitle}</Link>
+      {data?.grants['catalog.products.read']?.includes('ORG') ? (
+        <Link href="/catalog/products">Sản phẩm</Link>
+      ) : null}
       {admin ? <Link href={'/admin/' + admin}>Quản trị</Link> : null}
     </>
   );
 }
 export function WorkspaceNavigation() {
   const path = usePathname();
-  return path.startsWith('/admin') || path === '/workspace' || path === '/change-password' ? (
+  return path.startsWith('/admin') ||
+    path.startsWith('/catalog') ||
+    path === '/workspace' ||
+    path === '/change-password' ? (
     <SessionLinks />
   ) : (
     <Link href="/login">{messages.auth.login}</Link>

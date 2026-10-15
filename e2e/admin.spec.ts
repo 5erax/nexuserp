@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { bootstrapFixture } from './setup';
+import { verifyCatalog } from './catalog-flow';
 async function login(page: Page, code: string, email: string, password: string) {
   await page.goto('/login');
   await page.getByLabel('Mã tổ chức').fill(code);
@@ -16,7 +17,7 @@ async function changePassword(page: Page, password: string) {
   await page.getByRole('button', { name: 'Đổi mật khẩu', exact: true }).click();
   await expect(page).toHaveURL(/\/login\?changed=1$/);
 }
-test('administrator creates branches, role and scoped employee; unsafe actions confirm and report errors', async ({
+test('administrator and scoped employee manage IAM and Catalog with confirmed changes and safe retries', async ({
   page,
   browser,
 }) => {
@@ -82,6 +83,8 @@ test('administrator creates branches, role and scoped employee; unsafe actions c
   await expect(employee.getByRole('cell', { name: 'Chi nhánh B', exact: true })).toHaveCount(0);
   await employee.goto('/admin/roles');
   await expect(employee).toHaveURL(/\/forbidden$/);
+  // Reuse authenticated actors while respecting the real login IP quota.
+  await verifyCatalog(page, employee);
   await page.getByRole('link', { name: 'Chi nhánh', exact: true }).click();
   await page
     .getByRole('row')

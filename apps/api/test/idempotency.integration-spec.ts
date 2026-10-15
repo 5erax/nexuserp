@@ -301,6 +301,29 @@ describe('Idempotent commands on PostgreSQL', () => {
     ).toBe(1);
     await prisma.idempotencyKey.deleteMany({ where: { organizationId, command: expired.command } });
   });
+  it('keeps the pruning limit when PostgreSQL chooses a nested-loop plan', async () => {
+    const command = 'POST /pruning-plan-fixture';
+    await prisma.idempotencyKey.createMany({
+      data: Array.from({ length: 12 }, () => ({
+        organizationId,
+        actorId: userId,
+        command,
+        key: randomUUID(),
+        requestHash: 'a'.repeat(64),
+        createdAt: new Date(Date.now() - 172800000),
+        expiresAt: new Date(Date.now() - 86400000),
+      })),
+    });
+    const removed = await prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SET LOCAL enable_hashjoin = off`;
+      await tx.$executeRaw`SET LOCAL enable_mergejoin = off`;
+      await tx.$executeRaw`SET LOCAL enable_material = off`;
+      return pruneExpiredKeys(tx, 2);
+    });
+    expect(removed).toBe(2);
+    expect(await prisma.idempotencyKey.count({ where: { organizationId, command } })).toBe(10);
+    await prisma.idempotencyKey.deleteMany({ where: { organizationId, command } });
+  });
   it('requires a valid UUID header and validates DTOs before claiming a key', async () => {
     await post().send({ name: 'A' }).expect(400);
     await post('invalid').send({ name: 'A' }).expect(400);

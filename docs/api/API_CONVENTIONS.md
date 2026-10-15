@@ -34,6 +34,8 @@ Advisory transaction lock PostgreSQL theo organization/actor/method/route/resour
 
 Thiếu/sai UUID trả 400 IDEMPOTENCY_KEY_REQUIRED trước khi claim key. Dọn expired key bằng `pnpm --filter @nexus/api idempotency:prune`, mỗi lần tối đa 100 dòng với SKIP LOCKED; không xóa khóa còn hạn. Test PostgreSQL/HTTP tại `apps/api/test/idempotency.integration-spec.ts` kiểm chứng replay, mười request đồng thời, rollback, quyền/CSRF/scope, TTL và cleanup cạnh tranh retry.
 
+Batch cleanup chọn ID một lần bằng `WITH ... AS MATERIALIZED` rồi DELETE theo tập đó. Cách này giữ đúng giới hạn khi planner chọn nested loop, thay vì đánh giá lại subquery có khóa cho từng dòng; xem [PostgreSQL CTE materialization](https://www.postgresql.org/docs/17/queries-with.html#QUERIES-WITH-CTE-MATERIALIZATION). Regression test chạy với hash/merge join và optional materialization bị tắt trong transaction riêng.
+
 ## Mã lỗi
 
 | HTTP | Code | Ý nghĩa/hành vi client |

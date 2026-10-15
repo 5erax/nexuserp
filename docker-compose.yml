@@ -29,6 +29,9 @@ services:
       DATABASE_URL: ${COMPOSE_DATABASE_URL:?Set COMPOSE_DATABASE_URL with percent-encoded credentials}
       API_PORT: 3001
       NODE_ENV: production
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET}
+      CSRF_SECRET: ${CSRF_SECRET:?Set CSRF_SECRET}
+      WEB_ORIGIN: ${WEB_ORIGIN:-https://localhost:3000}
     depends_on: { migrate: { condition: service_completed_successfully } }
     healthcheck:
       test:
@@ -54,6 +57,9 @@ services:
       DATABASE_URL: ${COMPOSE_DATABASE_URL:?Set COMPOSE_DATABASE_URL with percent-encoded credentials}
       API_PORT: 3001
       NODE_ENV: development
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET}
+      CSRF_SECRET: ${CSRF_SECRET:?Set CSRF_SECRET}
+      WEB_ORIGIN: http://localhost:3000
     ports: ['127.0.0.1:3001:3001']
     volumes:
       - ./apps/api/src:/workspace/apps/api/src

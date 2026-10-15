@@ -6,6 +6,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { HealthService } from '../application/health.service';
+import { Public } from '../../../common/security/access';
 class HealthData {
   @ApiProperty({ enum: ['ok', 'ready'] }) status!: 'ok' | 'ready';
 }
@@ -29,10 +30,11 @@ class ErrorResponse {
 @Controller('health')
 export class HealthController {
   constructor(private readonly health: HealthService) {}
-  @Get() @ApiOkResponse({ type: HealthResponse }) live() {
+  @Get() @Public() @ApiOkResponse({ type: HealthResponse }) live() {
     return { status: 'ok' as const };
   }
   @Get('ready')
+  @Public()
   @ApiOkResponse({ type: HealthResponse })
   @ApiServiceUnavailableResponse({ type: ErrorResponse })
   ready() {

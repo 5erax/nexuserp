@@ -24,6 +24,9 @@ jobs:
       API_INTERNAL_URL: http://127.0.0.1:3001
       NEXT_TELEMETRY_DISABLED: 1
       TURBO_TELEMETRY_DISABLED: 1
+      JWT_SECRET: foundation_ci_jwt_key_only_not_for_deployment
+      CSRF_SECRET: foundation_ci_csrf_key_only_not_for_deployment
+      WEB_ORIGIN: https://localhost:3000
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -65,9 +68,12 @@ jobs:
             playwright-report/
             test-results/
             dependency-audit.json
+            apps/api/coverage/
   containers:
     runs-on: ubuntu-latest
     env:
+      JWT_SECRET: container_ci_jwt_key_only_not_for_deployment
+      CSRF_SECRET: container_ci_csrf_key_only_not_for_deployment
       POSTGRES_PASSWORD: 'ci#only?%'
       COMPOSE_DATABASE_URL: postgresql://nexus:ci%23only%3F%25@postgres:5432/nexuserp
     steps:

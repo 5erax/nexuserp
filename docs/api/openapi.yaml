@@ -11,6 +11,60 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthResponse"
+        "400":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "401":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "409":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "429":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "500":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "503":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
       tags: &a1
         - health
   /api/v1/health/ready:
@@ -24,6 +78,54 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthResponse"
+        "400":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "401":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "409":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "429":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "500":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
         "503":
           description: ""
           content:
@@ -31,14 +133,462 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
       tags: *a1
+  /api/v1/auth/csrf:
+    get:
+      operationId: AuthController_bootstrap
+      parameters: []
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CsrfResponse"
+        "400":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "401":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "409":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "429":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "500":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "503":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+      tags: &a2
+        - auth
+  /api/v1/auth/login:
+    post:
+      operationId: AuthController_login
+      parameters:
+        - name: X-CSRF-Token
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginInput"
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionResponse"
+        "400":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "401":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "409":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "429":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "500":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "503":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+      tags: *a2
+  /api/v1/auth/refresh:
+    post:
+      operationId: AuthController_refresh
+      parameters:
+        - name: X-CSRF-Token
+          in: header
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionResponse"
+        "400":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "401":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "409":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "429":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "500":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "503":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+      security:
+        - refreshCookie: []
+      tags: *a2
+  /api/v1/auth/logout:
+    post:
+      operationId: AuthController_logout
+      parameters:
+        - name: X-CSRF-Token
+          in: header
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionResponse"
+        "400":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "401":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "409":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "429":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "500":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "503":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+      security:
+        - refreshCookie: []
+      tags: *a2
+  /api/v1/auth/me:
+    get:
+      operationId: AuthController_me
+      parameters: []
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfileResponse"
+        "400":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "401":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "409":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "429":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "500":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "503":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+      security:
+        - cookie: []
+      tags: *a2
+  /api/v1/auth/password:
+    post:
+      operationId: AuthController_password
+      parameters:
+        - name: X-CSRF-Token
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangePasswordInput"
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionResponse"
+        "400":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "401":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "409":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "429":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "500":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "503":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+      security:
+        - cookie: []
+      tags: *a2
 info:
   title: NexusERP API
-  description: Phase 0 foundation; business endpoints are not implemented.
+  description: NexusERP API. Cookie sessions; unsafe requests require the exact
+    Origin and X-CSRF-Token. Business data is filtered by organization, branch
+    and ownership.
   version: 0.0.0
   contact: {}
 tags: []
 servers: []
 components:
+  securitySchemes:
+    cookie:
+      type: apiKey
+      in: cookie
+      name: nexus_access
+    refreshCookie:
+      type: apiKey
+      in: cookie
+      name: nexus_refresh
   schemas:
     HealthData:
       type: object
@@ -85,6 +635,136 @@ components:
         - details
         - requestId
     ErrorResponse:
+      type: object
+      properties:
+        error:
+          $ref: "#/components/schemas/ApiError"
+      required:
+        - error
+    CsrfData:
+      type: object
+      properties:
+        csrfToken:
+          type: string
+      required:
+        - csrfToken
+    CsrfResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/CsrfData"
+        meta:
+          $ref: "#/components/schemas/Meta"
+      required:
+        - data
+        - meta
+    LoginInput:
+      type: object
+      properties:
+        organizationCode:
+          type: string
+        email:
+          type: string
+        password:
+          type: string
+          writeOnly: true
+      required:
+        - organizationCode
+        - email
+        - password
+    SessionData:
+      type: object
+      properties:
+        authenticated:
+          type: boolean
+      required:
+        - authenticated
+    SessionResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/SessionData"
+        meta:
+          $ref: "#/components/schemas/Meta"
+      required:
+        - data
+        - meta
+    RoleData:
+      type: object
+      properties:
+        id:
+          type: string
+        code:
+          type: string
+        name:
+          type: string
+      required:
+        - id
+        - code
+        - name
+    Profile:
+      type: object
+      properties:
+        id:
+          type: string
+        organizationId:
+          type: string
+        email:
+          type: string
+        displayName:
+          type: string
+        mustChangePassword:
+          type: boolean
+        roles:
+          type: array
+          items:
+            $ref: "#/components/schemas/RoleData"
+        grants:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+              enum:
+                - ORG
+                - BRANCH
+                - OWN
+        branchIds:
+          type: array
+          items:
+            type: string
+      required:
+        - id
+        - organizationId
+        - email
+        - displayName
+        - mustChangePassword
+        - roles
+        - grants
+        - branchIds
+    ProfileResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/Profile"
+        meta:
+          $ref: "#/components/schemas/Meta"
+      required:
+        - data
+        - meta
+    ChangePasswordInput:
+      type: object
+      properties:
+        currentPassword:
+          type: string
+          writeOnly: true
+        newPassword:
+          type: string
+          writeOnly: true
+      required:
+        - currentPassword
+        - newPassword
+    ApiErrorResponse:
       type: object
       properties:
         error:

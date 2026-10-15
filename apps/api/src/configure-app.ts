@@ -2,9 +2,11 @@ import { randomUUID } from 'node:crypto';
 import { BadRequestException, INestApplication, Logger, ValidationPipe } from '@nestjs/common';
 import helmet from 'helmet';
 import type { Response, NextFunction } from 'express';
+import { json } from 'express';
 import { ApiExceptionFilter, CorrelatedRequest, EnvelopeInterceptor } from './common/http';
 export function configureApp(app: INestApplication, development = false) {
   app.setGlobalPrefix('api/v1');
+  app.use(json({ limit: '1mb' }));
   app.use(helmet());
   if (development)
     app.use('/api/docs', (_request: CorrelatedRequest, response: Response, next: NextFunction) => {

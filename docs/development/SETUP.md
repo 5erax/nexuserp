@@ -1,6 +1,6 @@
 # Chạy NexusERP cục bộ
 
-Yêu cầu: Node 22.12 trở lên trong nhánh 22 (xem `.nvmrc`), pnpm 10.32.1, PostgreSQL 17 hoặc Docker Compose v2. Chưa có đăng nhập hay dữ liệu nghiệp vụ ở Phase 0.
+Yêu cầu: Node 22.12 trở lên trong nhánh 22 (xem `.nvmrc`), pnpm 10.32.1, PostgreSQL 17 hoặc Docker Compose v2. API đã có phiên/CSRF; tài khoản bootstrap và giao diện quản trị được bổ sung ở phần IAM tiếp theo.
 
 ## Cài dependency
 
@@ -16,6 +16,8 @@ Nếu Node không kèm Corepack, cài Corepack tương thích Node 22 trước. 
 ## Cách 1 — PostgreSQL trong Docker, ứng dụng chạy trên máy
 
 Sao chép `.env.example` → `.env`, `apps/api/.env.example` → `apps/api/.env`, `apps/web/.env.example` → `apps/web/.env`. Trên PowerShell dùng `Copy-Item`; trên macOS/Linux dùng `cp`.
+
+Tạo hai secret JWT/CSRF độc lập theo [CONFIGURATION](CONFIGURATION.md), thay placeholder. Đặt WEB_ORIGIN đúng URL trình duyệt (`localhost` và `127.0.0.1` là hai origin khác nhau). Cookie không có Domain; dùng một origin nhất quán.
 
 Mật khẩu trong file example chỉ dành cho local; nếu đổi phải đồng bộ `DATABASE_URL`, `TEST_DATABASE_URL` và `COMPOSE_DATABASE_URL`. `POSTGRES_PASSWORD` giữ mật khẩu thô; URL-encode credential khi đưa vào URL. Ví dụ mật khẩu thô `local#test?%` trở thành `local%23test%3F%25` trong URL. URL Compose dùng host `postgres:5432`; URL trên máy dùng `127.0.0.1` và cổng host.
 
@@ -43,6 +45,8 @@ docker compose --profile app logs -f
 ```
 
 Profile `app` build image production, migrate trước API, chờ readiness trước khi chạy web. API không mở port ra host; truy cập qua web tại `localhost:3000`. API/web chạy bằng user `node`, không phải root. Migration chạy ở container riêng có công cụ CLI; image API chỉ giữ bản deploy production.
+
+Xác thực của profile production yêu cầu TLS proxy bên ngoài, WEB_ORIGIN HTTPS đúng tên miền và secret đã thay; health vẫn kiểm tra được qua HTTP loopback trong CI. Phát triển đăng nhập local qua profile `dev`/`pnpm dev`, không tắt Secure trong cấu hình production để né HTTPS.
 
 ```sh
 docker compose --profile dev up --build
@@ -75,7 +79,7 @@ pnpm exec playwright install chromium
 pnpm test:e2e
 ```
 
-Ba smoke test kiểm tra proxy tới PostgreSQL, axe accessibility, retry bằng bàn phím và màn hình 390px. Chúng kiểm chứng nền tảng, chưa kiểm chứng nghiệp vụ IAM/Sales/Inventory.
+Smoke test kiểm tra proxy tới PostgreSQL, axe accessibility, retry bằng bàn phím, màn hình 390px và hiển thị lỗi mạng/requestId. API integration kiểm chứng auth/CSRF/rotation thật; chưa coi UI nghiệp vụ Sales/Inventory đã được kiểm chứng.
 
 ## Xử lý lỗi thường gặp
 

@@ -49,7 +49,15 @@ export class IdempotencyInterceptor implements NestInterceptor {
         message: 'Cần Idempotency-Key là UUID hợp lệ',
       });
     const params = Object.fromEntries(
-      Object.entries(request.params).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)),
+      Object.entries(request.params)
+        .map(
+          ([name, value]) =>
+            [
+              name,
+              typeof value === 'string' && isUUID(value) ? value.toLowerCase() : value,
+            ] as const,
+        )
+        .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)),
     );
     const command = JSON.stringify([request.method, request.route.path, params]);
     if (command.length > 512) throw new InternalServerErrorException();

@@ -18,6 +18,7 @@ export async function cleanupIam(prisma: PrismaService, organizationIds: string[
     await tx.userRole.deleteMany({ where: { organizationId: { in: organizationIds } } });
     await tx.rolePermission.deleteMany({ where: { organizationId: { in: organizationIds } } });
     await tx.role.deleteMany({ where: { organizationId: { in: organizationIds } } });
+    await tx.idempotencyKey.deleteMany({ where: { organizationId: { in: organizationIds } } });
     await tx.user.deleteMany({ where: { organizationId: { in: organizationIds } } });
     await tx.branch.deleteMany({ where: { organizationId: { in: organizationIds } } });
     await tx.organization.deleteMany({ where: { id: { in: organizationIds } } });

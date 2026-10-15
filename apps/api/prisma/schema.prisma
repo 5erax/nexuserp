@@ -23,6 +23,7 @@ model Organization {
   auditLogs         AuditLog[]
   products          Product[]
   documentSequences DocumentSequence[]
+  idempotencyKeys   IdempotencyKey[]
 
   @@map("organizations")
 }
@@ -63,6 +64,7 @@ model User {
   stockMovements      StockMovement[]
   adjustmentsCreated  StockAdjustment[]  @relation("AdjustmentCreator")
   adjustmentsApproved StockAdjustment[]  @relation("AdjustmentApprover")
+  idempotencyKeys     IdempotencyKey[]
 
   @@unique([organizationId, email])
   @@unique([organizationId, id])
@@ -362,4 +364,24 @@ model DocumentSequence {
 
   @@id([organizationId, kind, year])
   @@map("document_sequences")
+}
+
+model IdempotencyKey {
+  id             String       @id @default(uuid()) @db.Uuid
+  organizationId String       @map("organization_id") @db.Uuid
+  actorId        String       @map("actor_id") @db.Uuid
+  command        String       @db.VarChar(512)
+  key            String       @db.Uuid
+  requestHash    String       @map("request_hash") @db.Char(64)
+  status         String       @default("IN_PROGRESS") @db.VarChar(16)
+  response       Json?
+  responseStatus Int?         @map("response_status")
+  createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  expiresAt      DateTime     @map("expires_at") @db.Timestamptz(3)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  actor          User         @relation(fields: [organizationId, actorId], references: [organizationId, id], onDelete: Restrict)
+
+  @@unique([organizationId, actorId, command, key])
+  @@index([expiresAt])
+  @@map("idempotency_keys")
 }

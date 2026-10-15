@@ -349,7 +349,6 @@ export interface components {
             currentPassword: string;
             newPassword: string;
         };
-        Object: Record<string, never>;
         UserRoleData: {
             id: string;
             code: string;
@@ -1406,8 +1405,8 @@ export interface operations {
     UsersController_list: {
         parameters: {
             query?: {
-                page?: components["schemas"]["Object"];
-                pageSize?: components["schemas"]["Object"];
+                page?: number;
+                pageSize?: number;
                 q?: string;
                 sortOrder?: "asc" | "desc";
                 status?: "ACTIVE" | "INACTIVE" | "LOCKED";
@@ -1523,7 +1522,9 @@ export interface operations {
     UsersController_create: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                "X-CSRF-Token": string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -1747,7 +1748,9 @@ export interface operations {
     UsersController_update: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                "X-CSRF-Token": string;
+            };
             path: {
                 id: string;
             };
@@ -1862,8 +1865,8 @@ export interface operations {
     RolesController_list: {
         parameters: {
             query?: {
-                page?: components["schemas"]["Object"];
-                pageSize?: components["schemas"]["Object"];
+                page?: number;
+                pageSize?: number;
                 q?: string;
                 sortOrder?: "asc" | "desc";
             };
@@ -1976,7 +1979,9 @@ export interface operations {
     RolesController_create: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                "X-CSRF-Token": string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -2198,7 +2203,9 @@ export interface operations {
     RolesController_update: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                "X-CSRF-Token": string;
+            };
             path: {
                 id: string;
             };
@@ -2313,8 +2320,8 @@ export interface operations {
     OrganizationController_branches: {
         parameters: {
             query?: {
-                page?: components["schemas"]["Object"];
-                pageSize?: components["schemas"]["Object"];
+                page?: number;
+                pageSize?: number;
                 q?: string;
                 sortOrder?: "asc" | "desc";
                 status?: "ACTIVE" | "INACTIVE";
@@ -2428,7 +2435,9 @@ export interface operations {
     OrganizationController_create: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                "X-CSRF-Token": string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -2652,7 +2661,9 @@ export interface operations {
     OrganizationController_update: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                "X-CSRF-Token": string;
+            };
             path: {
                 id: string;
             };
@@ -2876,7 +2887,9 @@ export interface operations {
     OrganizationController_updateProfile: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                "X-CSRF-Token": string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -2989,7 +3002,7 @@ export interface operations {
     AuditController_list: {
         parameters: {
             query?: {
-                limit?: components["schemas"]["Object"];
+                limit?: number;
                 cursor?: string;
                 actorId?: string;
                 entityType?: string;

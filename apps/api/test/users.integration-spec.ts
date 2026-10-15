@@ -5,6 +5,7 @@ import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { configureApp } from '../src/configure-app';
+import { createOpenApi } from '../src/openapi';
 import { ENVIRONMENT, parseEnvironment, type Environment } from '../src/config/environment';
 import { PrismaService } from '../src/infrastructure/prisma/prisma.service';
 import { PasswordService } from '../src/modules/iam/application/password.service';
@@ -141,6 +142,39 @@ describe('IAM users API', () => {
   afterAll(async () => {
     if (prisma) await cleanupIam(prisma, [organizationId, foreignOrganizationId]);
     if (app) await app.close();
+  });
+  it('publishes integer pagination for all administration list contracts', () => {
+    const spec = createOpenApi(app);
+    for (const path of ['/api/v1/users', '/api/v1/branches', '/api/v1/roles']) {
+      expect(spec.paths[path]?.get?.parameters).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            name: 'page',
+            schema: expect.objectContaining({ type: 'integer' }),
+          }),
+          expect.objectContaining({
+            name: 'pageSize',
+            schema: expect.objectContaining({ type: 'integer' }),
+          }),
+        ]),
+      );
+    }
+    expect(spec.paths['/api/v1/audit-logs']?.get?.parameters).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          name: 'limit',
+          schema: expect.objectContaining({ type: 'integer' }),
+        }),
+      ]),
+    );
+    for (const path of Object.values(spec.paths))
+      for (const method of ['post', 'patch', 'put', 'delete'] as const)
+        if (path?.[method])
+          expect(path[method]!.parameters).toEqual(
+            expect.arrayContaining([
+              expect.objectContaining({ in: 'header', name: 'X-CSRF-Token', required: true }),
+            ]),
+          );
   });
   it('IAM-004 filters users and totals before pagination, hides other memberships and rejects IDOR', async () => {
     const manager = await login(ids.manager);

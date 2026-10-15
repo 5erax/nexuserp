@@ -2,20 +2,20 @@ import { Type } from 'class-transformer';
 import { IsIn, IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 export class PageQuery {
-  @ApiPropertyOptional({ default: 1, maximum: 1000000 })
+  @ApiPropertyOptional({ type: 'integer', default: 1, minimum: 1, maximum: 1000000 })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1)
   @Max(1000000)
-  page = 1;
-  @ApiPropertyOptional({ default: 20, maximum: 100 })
+  page: number = 1;
+  @ApiPropertyOptional({ type: 'integer', default: 20, minimum: 1, maximum: 100 })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1)
   @Max(100)
-  pageSize = 20;
+  pageSize: number = 20;
   @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(100) q?: string;
   @ApiPropertyOptional({ enum: ['asc', 'desc'], default: 'desc' })
   @IsOptional()

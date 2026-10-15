@@ -66,6 +66,9 @@ jobs:
             dependency-audit.json
   containers:
     runs-on: ubuntu-latest
+    env:
+      POSTGRES_PASSWORD: 'ci#only?%'
+      COMPOSE_DATABASE_URL: postgresql://nexus:ci%23only%3F%25@postgres:5432/nexuserp
     steps:
       - uses: actions/checkout@v4
       - name: Build and start Compose

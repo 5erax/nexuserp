@@ -12,6 +12,7 @@ Không commit `.env`. File `*.example` là mẫu local, không dùng credential 
 | `API_INTERNAL_URL` | Web server | `http://127.0.0.1:3001`; origin server-side dùng cho rewrite, không phải biến `NEXT_PUBLIC_*` |
 | `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB` | Docker Compose | Local user, password và database; password bắt buộc qua `.env` |
 | `POSTGRES_PORT` | Docker host | 5432, chỉ bind loopback |
+| `COMPOSE_DATABASE_URL` | Compose migration/API | URL đầy đủ tới host `postgres:5432`; credential percent-encoded, độc lập với mật khẩu thô của PostgreSQL |
 | `E2E_BASE_URL` | Playwright | `http://127.0.0.1:3000` |
 
 API đọc `.env` trong `apps/api` khi chạy từ script workspace; biến môi trường có sẵn được ưu tiên. Web đọc `.env` trong `apps/web`. Root `.env` chỉ dành cho Compose. Không đặt secret vào `NEXT_PUBLIC_*`.

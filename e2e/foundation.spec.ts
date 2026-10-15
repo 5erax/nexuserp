@@ -24,3 +24,26 @@ test('shell fits a narrow screen', async ({ page }) => {
     await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
   ).toBeTruthy();
 });
+
+test('network failures do not become support codes', async ({ page }) => {
+  await page.route('**/api/v1/health/ready', (route) => route.abort('failed'));
+  await page.goto('/');
+  await expect(page.getByRole('status')).toContainText('Chưa kết nối được hệ thống', {
+    timeout: 20000,
+  });
+  await expect(page.getByText('Mã hỗ trợ:', { exact: false })).toHaveCount(0);
+});
+
+test('valid API errors retain their correlated support code', async ({ page }) => {
+  await page.route('**/api/v1/health/ready', (route) =>
+    route.fulfill({
+      status: 503,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        error: { code: 'DATABASE_UNAVAILABLE', requestId: 'support-test-001' },
+      }),
+    }),
+  );
+  await page.goto('/');
+  await expect(page.getByText('Mã hỗ trợ: support-test-001')).toBeVisible({ timeout: 20000 });
+});

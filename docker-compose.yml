@@ -19,14 +19,14 @@ services:
     profiles: [app, dev]
     build: { context: ., dockerfile: infrastructure/docker/Dockerfile, target: migration }
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-nexus}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-nexuserp}
+      DATABASE_URL: ${COMPOSE_DATABASE_URL:?Set COMPOSE_DATABASE_URL with percent-encoded credentials}
     depends_on: { postgres: { condition: service_healthy } }
     restart: 'no'
   api:
     profiles: [app]
     build: { context: ., dockerfile: infrastructure/docker/Dockerfile, target: api }
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-nexus}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-nexuserp}
+      DATABASE_URL: ${COMPOSE_DATABASE_URL:?Set COMPOSE_DATABASE_URL with percent-encoded credentials}
       API_PORT: 3001
       NODE_ENV: production
     depends_on: { migrate: { condition: service_completed_successfully } }
@@ -51,7 +51,7 @@ services:
     build: { context: ., dockerfile: infrastructure/docker/Dockerfile, target: development }
     command: ['pnpm', '--filter', '@nexus/api', 'dev']
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-nexus}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-nexuserp}
+      DATABASE_URL: ${COMPOSE_DATABASE_URL:?Set COMPOSE_DATABASE_URL with percent-encoded credentials}
       API_PORT: 3001
       NODE_ENV: development
     ports: ['127.0.0.1:3001:3001']

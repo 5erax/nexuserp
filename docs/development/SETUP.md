@@ -17,7 +17,7 @@ Nếu Node không kèm Corepack, cài Corepack tương thích Node 22 trước. 
 
 Sao chép `.env.example` → `.env`, `apps/api/.env.example` → `apps/api/.env`, `apps/web/.env.example` → `apps/web/.env`. Trên PowerShell dùng `Copy-Item`; trên macOS/Linux dùng `cp`.
 
-Mật khẩu trong file example chỉ dành cho local; nếu đổi phải đồng bộ `DATABASE_URL` và `TEST_DATABASE_URL`. URL-encode ký tự đặc biệt trong credential khi đưa vào URL.
+Mật khẩu trong file example chỉ dành cho local; nếu đổi phải đồng bộ `DATABASE_URL`, `TEST_DATABASE_URL` và `COMPOSE_DATABASE_URL`. `POSTGRES_PASSWORD` giữ mật khẩu thô; URL-encode credential khi đưa vào URL. Ví dụ mật khẩu thô `local#test?%` trở thành `local%23test%3F%25` trong URL. URL Compose dùng host `postgres:5432`; URL trên máy dùng `127.0.0.1` và cổng host.
 
 ```sh
 docker compose up -d postgres

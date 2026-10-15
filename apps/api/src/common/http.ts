@@ -54,7 +54,19 @@ export class ApiExceptionFilter implements ExceptionFilter {
           ? structured.message
           : 'Request không hợp lệ';
     if (status === 500)
-      new Logger('HTTP').error({ event: 'unhandled_error', requestId: request.requestId });
+      new Logger('HTTP').error({
+        event: 'unhandled_error',
+        requestId: request.requestId,
+        exceptionType: exception instanceof Error ? exception.constructor.name : 'Unknown',
+        // Exception messages can contain credentials or SQL parameters; retain only call sites.
+        stack:
+          exception instanceof Error
+            ? exception.stack
+                ?.split('\n')
+                .filter((line) => /^\s+at /.test(line))
+                .join('\n')
+            : undefined,
+      });
     response.status(status).json({
       error: {
         code,

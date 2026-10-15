@@ -3,9 +3,15 @@ import { BadRequestException, INestApplication, Logger, ValidationPipe } from '@
 import helmet from 'helmet';
 import type { Response, NextFunction } from 'express';
 import { ApiExceptionFilter, CorrelatedRequest, EnvelopeInterceptor } from './common/http';
-export function configureApp(app: INestApplication) {
+export function configureApp(app: INestApplication, development = false) {
   app.setGlobalPrefix('api/v1');
   app.use(helmet());
+  if (development)
+    app.use('/api/docs', (_request: CorrelatedRequest, response: Response, next: NextFunction) => {
+      // Swagger initializes inline; keep the default CSP on every other route.
+      response.removeHeader('Content-Security-Policy');
+      next();
+    });
   app.use((request: CorrelatedRequest, response: Response, next: NextFunction) => {
     const header = request.headers['x-request-id'];
     request.requestId =

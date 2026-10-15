@@ -1,4 +1,6 @@
-import { INestApplication } from '@nestjs/common';
+import { INestApplication, Logger } from '@nestjs/common';
+import { SwaggerModule } from '@nestjs/swagger';
+import { createOpenApi } from '../src/openapi';
 import { Test } from '@nestjs/testing';
 import { Controller, Get, Post, Body, Module } from '@nestjs/common';
 import { IsString } from 'class-validator';
@@ -50,9 +52,35 @@ describe('API foundation contract', () => {
     expect(res.body.error.details.length).toBeGreaterThan(0);
   });
   it('does not expose internal exceptions', async () => {
+    const log = jest.spyOn(Logger.prototype, 'error').mockImplementation(() => {});
     const res = await request(app.getHttpServer()).get('/api/v1/probe/crash').expect(500);
     expect(res.body.error.code).toBe('INTERNAL_ERROR');
     expect(JSON.stringify(res.body)).not.toContain('private-database-password');
+    const diagnostic = log.mock.calls[0]?.[0];
+    expect(diagnostic).toMatchObject({
+      requestId: res.body.error.requestId,
+      exceptionType: 'Error',
+    });
+    expect(diagnostic.stack).toContain('ProbeController.crash');
+    expect(JSON.stringify(diagnostic)).not.toContain('private-database-password');
+    log.mockRestore();
+  });
+  it('relaxes CSP only on development Swagger and keeps other security headers', async () => {
+    const mod = await Test.createTestingModule({ imports: [ProbeModule] }).compile();
+    const dev = mod.createNestApplication();
+    configureApp(dev, true);
+    SwaggerModule.setup('api/docs', dev, createOpenApi(dev));
+    await dev.init();
+    try {
+      const docs = await request(dev.getHttpServer()).get('/api/docs').expect(200);
+      expect(docs.headers['content-security-policy']).toBeUndefined();
+      expect(docs.headers['x-content-type-options']).toBe('nosniff');
+      const api = await request(dev.getHttpServer()).get('/api/v1/probe').expect(200);
+      expect(api.headers['content-security-policy']).toContain("script-src 'self'");
+      await request(app.getHttpServer()).get('/api/docs').expect(404);
+    } finally {
+      await dev.close();
+    }
   });
   it('gives unknown routes the error envelope', async () => {
     const res = await request(app.getHttpServer()).get('/api/v1/missing').expect(404);

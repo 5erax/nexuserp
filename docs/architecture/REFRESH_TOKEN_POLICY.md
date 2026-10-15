@@ -8,6 +8,8 @@ Quyết định triển khai của [ADR-0010](../adr/0010-cookie-and-csrf-strate
 - Sau CSRF/Origin validation, tìm token bằng hash; khóa family trước, rồi token (`SELECT ... FOR UPDATE`), đọc lại trạng thái sau khi khóa. Mọi thao tác thu hồi/rotation phải cùng thứ tự khóa. Dùng giờ PostgreSQL (`clock_timestamp()` sau khi lấy khóa), không dùng timestamp client hay thời điểm bắt đầu transaction.
 - Token ACTIVE hợp lệ chỉ tạo **một** successor trong transaction: ghi hash successor, đánh dấu token cũ đã xoay, ghi audit và commit. Sau commit mới trả 200 và đặt cookie mới. Lỗi trước commit rollback, token cũ còn dùng được.
 - Thu hồi family và ghi audit phải commit trước khi trả lỗi 401. Không ném exception trong transaction khiến việc thu hồi bị rollback. Guard kiểm tra family còn hiệu lực ở mỗi request, bao gồm access JWT.
+
+Login/đổi mật khẩu/quản trị user lấy organization rồi user bằng `FOR NO KEY UPDATE`, tiếp đó các family theo ID tăng dần; refresh/logout chỉ khóa family rồi token. Không dùng `FOR UPDATE` trên organization/user trong lúc chờ family: audit insert cần FK `KEY SHARE` trên hai parent này và có thể tạo deadlock ngược với refresh. Nếu quản trị đổi email/khóa unique, phải khóa/thu hồi family trước khi UPDATE user nâng mức khóa.
 - Giữ hash token cũ đến hạn tuyệt đối của family. Dọn family hết hạn cùng token theo chính sách lưu audit; không xóa dấu vết token cũ giữa phiên.
 
 Lệnh vận hành `pnpm --filter @nexus/api sessions:prune` dọn tối đa 100 family đã hết hạn mỗi lần, khóa và kiểm tra lại clock database trước xóa session/family. Không xóa audit; không dọn token đã xoay của family còn hạn. Lệnh không tự chạy theo lịch ở MVP.

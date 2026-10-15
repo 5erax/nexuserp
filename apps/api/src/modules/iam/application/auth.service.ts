@@ -86,8 +86,8 @@ export class AuthService {
       : undefined;
     const refreshToken = randomBytes(32).toString('hex');
     const result = await this.prisma.$transaction(async (tx) => {
-      await tx.$queryRaw`SELECT id FROM organizations WHERE id=${organization.id}::uuid FOR UPDATE`;
-      await tx.$queryRaw`SELECT id FROM users WHERE id=${user.id}::uuid FOR UPDATE`;
+      await tx.$queryRaw`SELECT id FROM organizations WHERE id=${organization.id}::uuid FOR NO KEY UPDATE`;
+      await tx.$queryRaw`SELECT id FROM users WHERE id=${user.id}::uuid FOR NO KEY UPDATE`;
       const current = await tx.user.findUniqueOrThrow({ where: { id: user.id } });
       if (current.status !== 'ACTIVE' || current.passwordHash !== user.passwordHash)
         throw invalid();
@@ -292,6 +292,19 @@ export class AuthService {
       });
     });
   }
+  async revokeUserSessions(tx: Prisma.TransactionClient, userId: string) {
+    const families = await tx.refreshFamily.findMany({
+      where: { userId, revokedAt: null },
+      orderBy: { id: 'asc' },
+    });
+    for (const family of families) {
+      await tx.$queryRaw`SELECT id FROM refresh_families WHERE id=${family.id}::uuid FOR UPDATE`;
+      await tx.refreshFamily.update({
+        where: { id: family.id },
+        data: { revokedAt: await this.now(tx) },
+      });
+    }
+  }
   async changePassword(
     actor: Actor,
     input: { currentPassword: string; newPassword: string },
@@ -305,8 +318,9 @@ export class AuthService {
       });
     const passwordHash = await this.passwords.hash(input.newPassword);
     await this.prisma.$transaction(async (tx) => {
-      await tx.$queryRaw`SELECT id FROM organizations WHERE id=${actor.organizationId}::uuid FOR UPDATE`;
-      await tx.$queryRaw`SELECT id FROM users WHERE id=${actor.id}::uuid FOR UPDATE`;
+      // Allow audit FK KEY SHARE locks while waiting for refresh families.
+      await tx.$queryRaw`SELECT id FROM organizations WHERE id=${actor.organizationId}::uuid FOR NO KEY UPDATE`;
+      await tx.$queryRaw`SELECT id FROM users WHERE id=${actor.id}::uuid FOR NO KEY UPDATE`;
       const current = await tx.user.findUniqueOrThrow({ where: { id: actor.id } });
       if (current.status !== 'ACTIVE' || current.passwordHash !== user.passwordHash)
         throw invalid();
@@ -314,17 +328,7 @@ export class AuthService {
         where: { id: actor.id },
         data: { passwordHash, mustChangePassword: false },
       });
-      const families = await tx.refreshFamily.findMany({
-        where: { userId: actor.id, revokedAt: null },
-        orderBy: { id: 'asc' },
-      });
-      for (const family of families) {
-        await tx.$queryRaw`SELECT id FROM refresh_families WHERE id=${family.id}::uuid FOR UPDATE`;
-        await tx.refreshFamily.update({
-          where: { id: family.id },
-          data: { revokedAt: await this.now(tx) },
-        });
-      }
+      await this.revokeUserSessions(tx, actor.id);
       await this.audit.record(tx, {
         organizationId: actor.organizationId,
         actorId: actor.id,

@@ -18,23 +18,23 @@ Chỉ mục tài liệu của dự án. Nguồn sự thật về tiến độ l�
 | [development/DEPENDENCIES.md](development/DEPENDENCIES.md) | Override bảo mật và advisory tooling còn theo dõi |
 | [architecture/SYSTEM_ARCHITECTURE.md](architecture/SYSTEM_ARCHITECTURE.md) | Luồng web → API → PostgreSQL đang triển khai |
 | [architecture/MODULE_BOUNDARIES.md](architecture/MODULE_BOUNDARIES.md) | Module ownership và kiểm tra import trong CI |
-| [database/ERD.md](database/ERD.md), [DATA_DICTIONARY.md](database/DATA_DICTIONARY.md) | Baseline organization/branch; #19 còn mở cho schema các phase sau |
+| [database/ERD.md](database/ERD.md), [DATA_DICTIONARY.md](database/DATA_DICTIONARY.md) | Baseline hiện có và thiết kế đích Phase 1–4, constraint/FK/index và ownership |
 | [database/MIGRATIONS.md](database/MIGRATIONS.md) | Generate, deploy, drift, test database và rollback plan |
 | [api/openapi.yaml](api/openapi.yaml) | Contract health/readiness sinh từ NestJS |
 
-## Sẽ được viết trong Phase 0
+## Hợp đồng Phase 0
 
-Mỗi tài liệu có issue riêng; đường dẫn dưới đây là đích dự kiến.
+Các tài liệu dưới đây đã có; trạng thái triển khai/test thực tế được ghi riêng, không coi thiết kế đích là chức năng đã chạy.
 
 | Đường dẫn | Issue |
 | --- | --- |
-| `product/PRD.md`, `product/USER_STORIES.md` | `P0-DOC-005` |
-| Mở rộng `database/ERD.md`, `database/DATA_DICTIONARY.md` cho Phase 1–3 | `P0-DB-002` |
-| `business-rules/*.md` (IAM, Inventory, Sales, Purchasing, Finance) | `P0-DOC-004` |
-| `business-rules/ORDER_STATE_MACHINE.md` | `P0-DOC-002` |
-| `business-rules/PERMISSION_MATRIX.md` | `P0-DOC-003` |
-| `api/API_CONVENTIONS.md` (pagination, command conventions) | `P0-DOC-006` |
-| `testing/TEST_STRATEGY.md`, `testing/ACCEPTANCE_SCENARIOS.md` | `P0-DOC-007` |
+| [PRD](product/PRD.md), [user stories](product/USER_STORIES.md) | #24 |
+| [ERD](database/ERD.md), [dictionary](database/DATA_DICTIONARY.md) | #19 |
+| [IAM](business-rules/IAM_RULES.md), [Inventory](business-rules/INVENTORY_RULES.md), [Sales](business-rules/SALES_RULES.md), [Purchasing](business-rules/PURCHASING_RULES.md), [Finance](business-rules/FINANCE_RULES.md) | #23 |
+| [State machine](business-rules/ORDER_STATE_MACHINE.md) | #21 |
+| [Permission matrix](business-rules/PERMISSION_MATRIX.md) | #22 |
+| [API conventions](api/API_CONVENTIONS.md) | #25 |
+| [Test strategy](testing/TEST_STRATEGY.md), [acceptance scenarios](testing/ACCEPTANCE_SCENARIOS.md) | #26 |
 
 ## Quy ước
 

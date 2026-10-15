@@ -147,7 +147,13 @@ export class AuthService {
     } catch {
       throw invalid();
     }
-    const family = await this.prisma.refreshFamily.findFirst({
+    return this.actorForFamily(this.prisma, claims);
+  }
+  async actorForFamily(
+    database: Prisma.TransactionClient,
+    claims: { sub: string; organizationId: string; familyId: string },
+  ): Promise<Actor> {
+    const family = await database.refreshFamily.findFirst({
       where: {
         id: claims.familyId,
         organizationId: claims.organizationId,

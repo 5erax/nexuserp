@@ -18,6 +18,8 @@ Mỗi role hệ thống có `is_system=true`, code và grant bất biến qua AP
 
 Ít nhất một user ACTIVE còn role BUSINESS_OWNER hoặc SYSTEM_ADMINISTRATOR. Thay đổi user/role assignment khóa organization trước khi đếm để bảo vệ trường hợp hai admin cùng tự vô hiệu hóa. System Administrator quản lý nền tảng; chỉ Business Owner có toàn bộ quyền nghiệp vụ mặc định. Purchasing, Accountant, HR là persona dự kiến Phase 5, chưa seed role không dùng.
 
+Quy tắc không cấp vượt quyền cũng áp dụng khi sửa/reset tài khoản có quyền cao hơn actor. Vì vậy System Administrator không reset Business Owner hoặc gán role nghiệp vụ ngoài grant hiện có; Business Owner thực hiện các thao tác đó. Các user có nhiều role được hợp quyền, permission trùng giữa các role không làm thao tác cập nhật thất bại.
+
 ## Catalog permission và endpoint
 
 Prefix chung `/api/v1`. `manage` là quyền CRUD quản trị được nêu tại hàng tương ứng; read luôn kiểm tra độc lập. Các cặp GET/POST chia quyền riêng, không ngầm suy manage thành read.

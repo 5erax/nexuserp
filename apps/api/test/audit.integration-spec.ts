@@ -6,13 +6,14 @@ import { AuditService, redactAudit } from '../src/modules/audit/application/audi
 describe('IAM-005 audit persistence', () => {
   let prisma: PrismaService;
   const organizationId = randomUUID();
-  const audit = new AuditService();
+  let audit: AuditService;
   beforeAll(async () => {
     if (!process.env.TEST_DATABASE_URL?.split('?')[0]?.endsWith('_test'))
       throw new Error('Dedicated test database required');
     prisma = new PrismaService(
       parseEnvironment({ ...process.env, DATABASE_URL: process.env.TEST_DATABASE_URL }),
     );
+    audit = new AuditService(prisma);
     await prisma.organization.create({
       data: { id: organizationId, code: 'T-' + organizationId.slice(0, 8), name: 'Audit fixture' },
     });

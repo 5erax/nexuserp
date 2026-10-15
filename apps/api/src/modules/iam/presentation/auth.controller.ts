@@ -28,6 +28,7 @@ import { cookie, cookieOptions, clearSession } from '../../../common/security/co
 import type { AuthorizedRequest } from '../../../common/security/security.guard';
 import { ENVIRONMENT, type Environment } from '../../../config/environment';
 import { AuthService } from '../application/auth.service';
+import { requestAudit } from '../../../common/http';
 
 export class LoginInput {
   @ApiProperty()
@@ -95,11 +96,6 @@ class ProfileResponse {
   @ApiProperty({ type: Profile }) data!: Profile;
   @ApiProperty({ type: Meta }) meta!: Meta;
 }
-const auditContext = (request: AuthorizedRequest) => ({
-  requestId: request.requestId,
-  ip: (request.clientIp ?? request.socket.remoteAddress)?.slice(0, 64),
-  userAgent: request.headers['user-agent']?.slice(0, 512),
-});
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
@@ -175,7 +171,7 @@ export class AuthController {
     @Req() request: AuthorizedRequest,
     @Res({ passthrough: true }) response: Response,
   ) {
-    const session = await this.auth.login(input, auditContext(request));
+    const session = await this.auth.login(input, requestAudit(request));
     this.setSession(response, session);
     response.clearCookie('nexus_preauth', cookieOptions(this.secure, '/api/v1/auth'));
     return { authenticated: true };
@@ -189,7 +185,7 @@ export class AuthController {
   async refresh(@Req() request: AuthorizedRequest, @Res({ passthrough: true }) response: Response) {
     const session = await this.auth.refresh(
       cookie(request, 'nexus_refresh'),
-      auditContext(request),
+      requestAudit(request),
     );
     if (session.kind === 'conflict')
       throw new ConflictException({
@@ -217,7 +213,7 @@ export class AuthController {
   @AuthRoute('logout')
   @ApiOkResponse({ type: SessionResponse })
   async logout(@Req() request: AuthorizedRequest, @Res({ passthrough: true }) response: Response) {
-    await this.auth.logout(cookie(request, 'nexus_refresh'), auditContext(request));
+    await this.auth.logout(cookie(request, 'nexus_refresh'), requestAudit(request));
     clearSession(response, this.secure);
     return { authenticated: false };
   }
@@ -249,7 +245,7 @@ export class AuthController {
     @Req() request: AuthorizedRequest,
     @Res({ passthrough: true }) response: Response,
   ) {
-    await this.auth.changePassword(request.actor, input, auditContext(request));
+    await this.auth.changePassword(request.actor, input, requestAudit(request));
     clearSession(response, this.secure);
     return { authenticated: false };
   }

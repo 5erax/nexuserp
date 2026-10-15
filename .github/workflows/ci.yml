@@ -40,7 +40,7 @@ jobs:
       - run: pnpm docs:check
       - run: pnpm typecheck
       - run: pnpm test
-      - run: pnpm test:integration
+      - run: pnpm --filter @nexus/api test:integration:foundation
       - run: pnpm db:migrate && pnpm db:check
       - run: pnpm contracts:check
       - run: pnpm audit:production
@@ -69,6 +69,39 @@ jobs:
             test-results/
             dependency-audit.json
             apps/api/coverage/
+  security:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-bookworm
+        env:
+          {
+            POSTGRES_USER: nexus,
+            POSTGRES_PASSWORD: security_ci_only,
+            POSTGRES_DB: nexuserp_security_test,
+          }
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U nexus -d nexuserp_security_test"
+          --health-interval 5s --health-timeout 5s --health-retries 15
+    env:
+      DATABASE_URL: postgresql://nexus:security_ci_only@127.0.0.1:5432/nexuserp_security_test
+      TEST_DATABASE_URL: postgresql://nexus:security_ci_only@127.0.0.1:5432/nexuserp_security_test
+      JWT_SECRET: security_ci_jwt_key_only_not_for_deployment
+      CSRF_SECRET: security_ci_csrf_key_only_not_for_deployment
+      WEB_ORIGIN: http://127.0.0.1:3000
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version-file: .nvmrc, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm db:generate
+      - run: pnpm --filter @nexus/api test:security
+      - run: pnpm --filter @nexus/api test:security:mutation
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: iam-security-diagnostics, path: apps/api/coverage/ }
   containers:
     runs-on: ubuntu-latest
     env:

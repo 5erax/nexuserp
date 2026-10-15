@@ -37,10 +37,12 @@ Khóa idempotency và thay đổi dữ liệu commit cùng transaction, không t
 | 401 | INVALID_CREDENTIALS | Login chung cho email/organization/password/status sai |
 | 401 | REFRESH_REUSE_DETECTED | Family đã thu hồi và commit trước response |
 | 403 | FORBIDDEN, CSRF_INVALID | Thiếu quyền hoặc Origin/CSRF sai; không refresh loop |
+| 403 | PASSWORD_CHANGE_REQUIRED | Chuyển tới đổi mật khẩu; me/logout/password vẫn dùng được |
 | 404 | NOT_FOUND | Không tồn tại hoặc ngoài phạm vi |
 | 409 | REFRESH_CONFLICT | Tranh chấp <5 giây, không Set-Cookie; phối hợp tab, không retry vô hạn |
 | 409 | DUPLICATE_EMAIL, DUPLICATE_CODE, DUPLICATE_SKU | Vi phạm unique trong tổ chức |
 | 409 | LAST_ADMIN_REQUIRED, SYSTEM_ROLE_IMMUTABLE | Bảo vệ quản trị và role hệ thống |
+| 409 | BRANCH_HAS_ACTIVE_USERS | Cấp chi nhánh hoạt động khác cho nhân viên trước khi ngừng chi nhánh |
 | 409 | INVALID_STATE_TRANSITION, SHIPMENT_ALREADY_EXISTS | Command không hợp lệ ở trạng thái hiện tại |
 | 409 | INSUFFICIENT_STOCK, BRANCH_WAREHOUSE_NOT_CONFIGURED | Không đủ hàng/kho mặc định |
 | 409 | ORDER_HAS_PAYMENTS, PAYMENT_EXCEEDS_TOTAL, DUPLICATE_PAYMENT_REFERENCE | Không hủy đơn đã thu, thu vượt/trùng |
@@ -48,6 +50,7 @@ Khóa idempotency và thay đổi dữ liệu commit cùng transaction, không t
 | 409 | IDEMPOTENCY_KEY_REUSED, REQUEST_IN_PROGRESS | Key khác payload hoặc command đang chạy |
 | 422 | BUSINESS_RULE_VIOLATION, EXPORT_LIMIT_EXCEEDED | Input đúng kiểu nhưng vi phạm quy tắc |
 | 429 | RATE_LIMITED | Chờ Retry-After giây; không tăng retry dồn |
+| 413 | PAYLOAD_TOO_LARGE | JSON vượt 1 MiB; giảm kích thước request |
 | 500 | INTERNAL_ERROR | Lỗi nội bộ; dùng requestId để điều tra |
 | 503 | DATABASE_UNAVAILABLE, SERVICE_UNAVAILABLE | Tạm thời không sẵn sàng; backoff có giới hạn |
 

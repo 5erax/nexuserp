@@ -11,14 +11,26 @@ import {
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { map } from 'rxjs';
+import { ListResult } from './pagination';
 export type CorrelatedRequest = Request & { requestId: string; clientIp?: string };
+export const requestAudit = (request: CorrelatedRequest) => ({
+  requestId: request.requestId,
+  ip: (request.clientIp ?? request.socket.remoteAddress)?.slice(0, 64),
+  userAgent: request.headers['user-agent']?.slice(0, 512),
+});
 @Injectable()
 export class EnvelopeInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler) {
     const request = context.switchToHttp().getRequest<CorrelatedRequest>();
     return next
       .handle()
-      .pipe(map((data: unknown) => ({ data, meta: { requestId: request.requestId } })));
+      .pipe(
+        map((data: unknown) =>
+          data instanceof ListResult
+            ? { data: data.items, meta: { ...data.meta, requestId: request.requestId } }
+            : { data, meta: { requestId: request.requestId } },
+        ),
+      );
   }
 }
 @Catch()

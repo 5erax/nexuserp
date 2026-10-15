@@ -9,15 +9,26 @@ import { AuthController } from './presentation/auth.controller';
 import { SecurityGuard } from '../../common/security/security.guard';
 import { CsrfService } from '../../common/security/csrf.service';
 import { RateLimiter } from '../../common/security/rate-limiter';
+import { UsersController } from './presentation/users.controller';
+import { UsersService } from './application/users.service';
+import { IamAdminPolicy } from './application/admin-policy.service';
+import { RolesService } from './application/roles.service';
+import { RolesController } from './presentation/roles.controller';
+import { OrganizationService } from './application/organization.service';
+import { OrganizationController } from './presentation/organization.controller';
 @Module({
   imports: [JwtModule.register({}), AuditModule],
-  controllers: [AuthController],
+  controllers: [AuthController, UsersController, RolesController, OrganizationController],
   providers: [
     OrganizationRepository,
     AuthService,
     PasswordService,
     CsrfService,
     RateLimiter,
+    UsersService,
+    IamAdminPolicy,
+    RolesService,
+    OrganizationService,
     { provide: APP_GUARD, useClass: SecurityGuard },
   ],
   exports: [OrganizationRepository, AuthService, PasswordService],

@@ -4,7 +4,7 @@
 
 `Business ERP` · `Portfolio-ready` · `Modular Monolith` · `Web Application`
 
-> Tài liệu gốc được đưa vào repository để làm nguồn tham chiếu. Phần định dạng bị hỏng khi chuyển đổi (sơ đồ, ảnh, CSS) đã được làm sạch hoặc dựng lại; nội dung nghiệp vụ được giữ nguyên. Các điểm còn mở được liệt kê ở **Phụ lục A** và theo dõi bằng issue.
+> Baseline gốc đã được làm sạch định dạng và hiệu chỉnh phạm vi theo roadmap Phase 0–6. Phụ lục A ghi trạng thái các điểm đã làm rõ và các phần còn phải triển khai; quyết định kiến trúc nằm trong ADR.
 
 NexusERP là hệ thống quản trị nguồn lực doanh nghiệp (Enterprise Resource Planning), tập trung vào bán hàng, khách hàng, mua hàng, tồn kho, tài chính và nhân sự, dành cho doanh nghiệp vừa và nhỏ có nhiều chi nhánh.
 
@@ -46,8 +46,8 @@ Phiên bản portfolio đầu tiên dùng một doanh nghiệp có nhiều chi n
 | --- | --- |
 | Presentation | Next.js · React · TanStack Query · shadcn/ui |
 | API & Security | NestJS REST · JWT · RBAC · DTO Validation · Rate Limit |
-| Domain & Application | IAM · CRM · Sales · Inventory · Purchase · Finance · HRM · Reporting · Audit |
-| Dữ liệu | PostgreSQL (system of record) · Redis (cache/queue) · Object Storage (attachments) |
+| Domain & Application | IAM · Catalog · CRM · Sales · Inventory · Purchasing · Finance · HRM · Reporting · Audit |
+| Dữ liệu | PostgreSQL (system of record); Redis/BullMQ từ Phase 6; attachments chưa thuộc MVP |
 
 Các module có service và repository riêng, giao tiếp qua application interfaces/domain events.
 
@@ -62,7 +62,7 @@ Các module có service và repository riêng, giao tiếp qua application inter
 | API          | REST + OpenAPI                     | Contracts, tài liệu API          |
 | Database     | PostgreSQL                         | Dữ liệu nghiệp vụ chuẩn          |
 | Data Access  | Prisma                             | Schema, migrations, truy vấn     |
-| Cache & Jobs | Redis, BullMQ                      | Cache và xử lý bất đồng bộ       |
+| Cache & Jobs | Redis, BullMQ (Phase 6)            | MVP dùng outbox polling trong tiến trình |
 | Auth         | JWT, HttpOnly cookies, Argon2id    | Phiên đăng nhập, mã hóa mật khẩu |
 | Testing      | Vitest/Jest, Supertest, Playwright | Unit, integration, E2E           |
 | Ops          | Docker, GitHub Actions             | Build, test, triển khai          |
@@ -130,19 +130,22 @@ Về lâu dài có thể tách một số module thành service độc lập, nh
 
 ## III. Thiết kế chức năng theo module
 
-NexusERP được chia thành 9 module nghiệp vụ, trong đó các module có chung dữ liệu nhưng trách nhiệm không chồng chéo.
+NexusERP có **10 business module** dùng chung PostgreSQL, mỗi module sở hữu quy tắc và thao tác ghi của mình. Outbox là hạ tầng dùng chung, không phải module nghiệp vụ thứ 11.
 
-| Module             | Functions chính                                         | Phạm vi  |
-| ------------------ | ------------------------------------------------------- | -------- |
-| IAM & Organization | Users, roles, permissions, branches, audit              | MVP      |
-| Catalog            | Products, SKU, categories, pricing, units               | MVP      |
-| CRM                | Customers, contacts, history, leads                     | MVP + P3 |
-| Sales              | Quotations, orders, discounts, fulfillment, returns     | MVP + P3 |
-| Inventory          | Warehouses, stock, reservations, transfers, adjustments | MVP + P3 |
-| Purchasing         | Suppliers, PO, receiving, purchase returns              | P3       |
-| Finance            | Payments, receivables, payables, accounting ledger      | P3–P4    |
-| HRM                | Employees, departments, attendance, leave               | P4       |
-| Analytics          | Operational KPIs, sales reports, exports                | MVP + P3 |
+| Module (mã chuẩn) | Trong MVP, kết thúc Phase 4 | Sau MVP |
+| --- | --- | --- |
+| IAM & Organization (`iam`) | Phase 1: phiên, users, roles, permissions, branches | Phase 6: cách ly tenant đầy đủ |
+| Catalog (`catalog`) | Phase 2: products, variants, SKU, giá bán cơ bản | Phase 5: price list nếu cần |
+| Inventory (`inventory`) | Phase 2: kho, ledger, balance, reservation, adjustment | Phase 5: chuyển kho và trả hàng |
+| CRM (`crm`) | Phase 3: hồ sơ khách hàng, lịch sử đơn theo phạm vi | Leads/pipeline chỉ mở rộng khi có yêu cầu |
+| Sales (`sales`) | Phase 3: đơn nháp, confirm, giao đủ một lần, hủy trước xuất kho | Phase 5: giao một phần, trả hàng, báo giá nếu cần |
+| Finance (`finance`) | Phase 3: chỉ ghi nhận thanh toán thủ công vào đơn | Phase 5: hóa đơn, công nợ, phân bổ, sổ cái, hoàn tiền |
+| Reporting (`reporting`) | Phase 4: doanh thu, đơn hàng, tồn kho, CSV | Phase 5: lợi nhuận sau khi có costing |
+| Audit (`audit`) | Phase 1: nhật ký và API; Phase 4: giao diện timeline | Mở rộng theo nghiệp vụ |
+| Purchasing (`purchasing`) | Không thuộc MVP | Phase 5: supplier, PO, nhận hàng, trả hàng mua |
+| HRM (`hrm`) | Không thuộc MVP | Phase 5: nhân viên, chấm công, nghỉ phép |
+
+Các luồng dưới đây mô tả đích dài hạn. MVP O2C chỉ gồm **khách hàng → đơn bán → giữ hàng → xuất kho/giao đủ → ghi nhận thanh toán thủ công**; không bao gồm báo giá, hóa đơn, đối soát công nợ hay pipeline CRM. API và UI bên dưới phải tuân theo phạm vi này.
 
 ### Luồng nghiệp vụ xuyên module
 
@@ -561,7 +564,7 @@ Toàn bộ API dùng prefix `/api/v1`, JSON, OpenAPI và quy chuẩn response/er
 | POST      | `/products/:id/variants` | Tạo SKU              |
 | GET/POST  | `/customers`             | Khách hàng           |
 | GET/PATCH | `/customers/:id`         | Chi tiết/cập nhật    |
-| GET/POST  | `/suppliers`             | Nhà cung cấp         |
+| GET/POST  | `/suppliers`             | Nhà cung cấp (Phase 5) |
 
 ### 3. Sales
 
@@ -574,7 +577,7 @@ Toàn bộ API dùng prefix `/api/v1`, JSON, OpenAPI và quy chuẩn response/er
 | POST     | `/sales/orders/:id/cancel`    | Hủy đơn hợp lệ       |
 | POST     | `/sales/orders/:id/shipments` | Tạo phiếu giao       |
 | POST     | `/sales/shipments/:id/post`   | Ghi nhận xuất hàng   |
-| POST     | `/sales/returns`              | Yêu cầu trả hàng     |
+| POST     | `/sales/returns`              | Yêu cầu trả hàng (Phase 5) |
 | GET      | `/sales/orders/:id/history`   | Lịch sử sự kiện      |
 
 ### 4. Inventory
@@ -585,26 +588,26 @@ Toàn bộ API dùng prefix `/api/v1`, JSON, OpenAPI và quy chuẩn response/er
 | GET      | `/inventory/movements`              | Nhật ký biến động    |
 | POST     | `/inventory/adjustments`            | Tạo phiếu điều chỉnh |
 | POST     | `/inventory/adjustments/:id/post`   | Ghi nhận điều chỉnh  |
-| POST     | `/inventory/transfers`              | Tạo phiếu chuyển kho |
-| POST     | `/inventory/transfers/:id/dispatch` | Xuất kho nguồn       |
-| POST     | `/inventory/transfers/:id/receive`  | Nhập kho đích        |
+| POST     | `/inventory/transfers`              | Tạo phiếu chuyển kho (Phase 5) |
+| POST     | `/inventory/transfers/:id/dispatch` | Xuất kho nguồn (Phase 5) |
+| POST     | `/inventory/transfers/:id/receive`  | Nhập kho đích (Phase 5) |
 | GET/POST | `/warehouses`                       | Quản lý kho          |
 
 ### 5. Purchasing, Finance & Reporting
 
 | Method   | Endpoint                         | Mục đích           |
 | -------- | -------------------------------- | ------------------ |
-| GET/POST | `/purchasing/orders`             | Purchase Orders    |
-| POST     | `/purchasing/orders/:id/approve` | Phê duyệt          |
-| POST     | `/purchasing/receipts`           | Tạo phiếu nhận     |
-| POST     | `/purchasing/receipts/:id/post`  | Nhập kho           |
-| GET/POST | `/finance/invoices`              | Hóa đơn/chứng từ   |
-| GET/POST | `/finance/payments`              | Thanh toán         |
-| POST     | `/finance/payments/:id/allocate` | Phân bổ thanh toán |
-| GET      | `/finance/receivables`           | Công nợ phải thu   |
+| GET/POST | `/purchasing/orders`             | Purchase Orders (Phase 5) |
+| POST     | `/purchasing/orders/:id/approve` | Phê duyệt (Phase 5) |
+| POST     | `/purchasing/receipts`           | Tạo phiếu nhận (Phase 5) |
+| POST     | `/purchasing/receipts/:id/post`  | Nhập kho (Phase 5) |
+| GET/POST | `/finance/invoices`              | Hóa đơn/chứng từ (Phase 5) |
+| GET/POST | `/finance/orders/:id/payments`   | Thanh toán thủ công vào đơn (Phase 3) |
+| POST     | `/finance/payments/:id/allocate` | Phân bổ vào hóa đơn (Phase 5) |
+| GET      | `/finance/receivables`           | Công nợ phải thu (Phase 5) |
 | GET      | `/reports/sales`                 | Báo cáo bán hàng   |
 | GET      | `/reports/inventory`             | Báo cáo tồn kho    |
-| GET      | `/reports/profit`                | Báo cáo lợi nhuận  |
+| GET      | `/reports/profit`                | Lợi nhuận (Phase 5, cần costing) |
 | GET      | `/audit-logs`                    | Nhật ký thao tác   |
 
 ### API Contract mẫu
@@ -738,7 +741,7 @@ Danh sách đơn, trạng thái, trang chi tiết, timeline sự kiện, thao t�
 
 ### CRM Workspace
 
-Hồ sơ khách hàng, lịch sử giao dịch, ghi chú, pipeline chăm sóc và phân loại nhóm khách.
+MVP: hồ sơ khách hàng, lịch sử đơn theo phạm vi và ghi chú. Pipeline, leads và phân loại nâng cao chưa thuộc MVP.
 
 Quy chuẩn UX: Desktop-first, responsive ở tablet/mobile; bảng dữ liệu có sorting, filtering, pagination; form validation rõ ràng; confirm dialog cho nghiệp vụ rủi ro; accessible keyboard navigation; và mọi trạng thái loading/empty/error đều có thiết kế.
 
@@ -946,7 +949,7 @@ cập nhật tài liệu trước khi phase liên quan bắt đầu.
 
 | Điểm | Cần chốt trước | Issue |
 | --- | --- | --- |
-| Nhãn phase của Purchasing/Finance/HRM trong bảng module lệch với roadmap; danh sách module trong sơ đồ kiến trúc khác bảng 9 module | Phase 0 | `P0-DOC-001` |
+| Đã thống nhất 10 business module ở mục II–III, phase của từng chức năng và các endpoint sau MVP | Đã làm rõ trong tài liệu | `P0-DOC-001` |
 | Bảng chuyển trạng thái đơn hàng; tách trạng thái đơn / giao hàng / thanh toán | Phase 0 | `P0-DOC-002` |
 | Ma trận quyền (role × permission × scope) | Phase 1 | `P0-DOC-003` |
 | Chiến lược CSRF và cookie giữa Next.js và NestJS | Phase 1 | `P0-ADR-010` |

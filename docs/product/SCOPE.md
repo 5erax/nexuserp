@@ -14,7 +14,8 @@ Xây một ERP vận hành được cho doanh nghiệp vừa và nhỏ nhiều c
 | Catalog | Sản phẩm, biến thể và SKU, kho |
 | Inventory | Tồn đầu kỳ, stock ledger, số dư, đặt trước, điều chỉnh có lý do và phê duyệt theo ngưỡng, đối soát |
 | CRM | Khách hàng (hồ sơ và lịch sử giao dịch cơ bản) |
-| Sales | Tạo đơn, xác nhận và giữ hàng, tạo phiếu giao và ghi nhận xuất kho, hủy trước khi xuất kho, ghi nhận thanh toán vận hành, lịch sử sự kiện |
+| Sales | Phase 3: tạo đơn, xác nhận và giữ hàng, giao đủ một lần, hủy trước khi xuất kho, lịch sử sự kiện |
+| Finance (tối giản) | Phase 3: module Finance sở hữu khoản thanh toán thủ công vào đơn; trạng thái thanh toán suy ra từ tổng tiền đã ghi nhận |
 | Reporting | Dashboard doanh thu, đơn hàng, tồn kho; audit timeline; export |
 | Nền tảng | Monorepo, Docker, CI, migrations, OpenAPI, idempotency, outbox cơ bản, seed data và deployment demo |
 
@@ -26,6 +27,9 @@ Xây một ERP vận hành được cho doanh nghiệp vừa và nhỏ nhiều c
 | Chuyển kho, giao hàng một phần, trả hàng | Phase 5 |
 | Finance: hóa đơn, công nợ, sổ cái | Phase 5 |
 | HRM: nhân viên, chấm công, nghỉ phép | Phase 5 |
+| Costing và `/reports/profit` | Phase 5; MVP chỉ có doanh thu và tồn kho |
+| Báo giá, price list nâng cao | Phase 5 nếu cần |
+| Leads/pipeline CRM | Chưa lên kế hoạch |
 | Cách ly tenant đầy đủ, Redis/BullMQ, monitoring, load test | Phase 6 |
 | Kế toán pháp định, hóa đơn điện tử, tính lương theo quy định Việt Nam | Phạm vi tích hợp/mở rộng, không cam kết |
 | Tích hợp cổng thanh toán | Chưa lên kế hoạch |

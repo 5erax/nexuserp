@@ -1,1 +1,1 @@
-const unusedProbe = 1;
+export const ciGateProbe: string = 1;

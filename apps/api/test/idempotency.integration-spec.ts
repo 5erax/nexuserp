@@ -47,7 +47,7 @@ class ProbeController {
     @Body() input: CommandInput,
     @Param('id', ParseUUIDPipe) id: string,
   ) {
-    return this.create(req, { name: `${input.name} (${id})` });
+    return this.create(req, { name: `${input.name} (${id.toLowerCase()})` });
   }
   @Post()
   @RequirePermission('iam.users.manage')
@@ -336,7 +336,7 @@ describe('Idempotent commands on PostgreSQL', () => {
   });
   it('scopes the HTTP command by route and validated resource ID', async () => {
     const key = randomUUID();
-    const firstResource = randomUUID(),
+    const firstResource = 'abcdef12' + randomUUID().slice(8),
       secondResource = randomUUID();
     const resourcePost = (id: string) =>
       request(app.getHttpServer())
@@ -352,6 +352,9 @@ describe('Idempotent commands on PostgreSQL', () => {
     const replay = await resourcePost(firstResource).expect(201);
     expect(first.body.data.id).not.toBe(second.body.data.id);
     expect(replay.body.data).toEqual(first.body.data);
+    const uppercaseReplay = await resourcePost(firstResource.toUpperCase()).expect(201);
+    expect(uppercaseReplay.body.data).toEqual(first.body.data);
+    expect(uppercaseReplay.headers['idempotency-replayed']).toBe('true');
   });
   it('returns Retry-After for an incomplete key and documents the required UUID header', async () => {
     const key = randomUUID();

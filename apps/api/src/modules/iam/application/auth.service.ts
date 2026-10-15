@@ -203,10 +203,11 @@ export class AuthService {
     return this.prisma.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT id FROM refresh_families WHERE id=${hint.familyId}::uuid FOR UPDATE`;
       await tx.$queryRaw`SELECT id FROM refresh_sessions WHERE id=${hint.id}::uuid FOR UPDATE`;
-      const session = await tx.refreshSession.findUniqueOrThrow({
+      const session = await tx.refreshSession.findUnique({
         where: { id: hint.id },
         include: { family: { include: { user: true } }, successor: true },
       });
+      if (!session) return { kind: 'invalid' };
       const now = await this.now(tx);
       const family = session.family;
       if (
@@ -276,8 +277,8 @@ export class AuthService {
     if (!hint) return;
     await this.prisma.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT id FROM refresh_families WHERE id=${hint.familyId}::uuid FOR UPDATE`;
-      const family = await tx.refreshFamily.findUniqueOrThrow({ where: { id: hint.familyId } });
-      if (family.revokedAt) return;
+      const family = await tx.refreshFamily.findUnique({ where: { id: hint.familyId } });
+      if (!family || family.revokedAt) return;
       await tx.refreshFamily.update({
         where: { id: family.id },
         data: { revokedAt: await this.now(tx) },

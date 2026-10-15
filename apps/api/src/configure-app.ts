@@ -10,7 +10,12 @@ import helmet from 'helmet';
 import type { Response, NextFunction } from 'express';
 import { json } from 'express';
 import { ApiExceptionFilter, CorrelatedRequest, EnvelopeInterceptor } from './common/http';
+import { ENVIRONMENT, type Environment } from './config/environment';
+import { RateLimiter } from './common/security/rate-limiter';
+import { clientAddress } from './common/security/client-address';
 export function configureApp(app: INestApplication, development = false) {
+  const config = app.get<Environment>(ENVIRONMENT);
+  const limiter = app.get(RateLimiter);
   app.setGlobalPrefix('api/v1');
   app.use(helmet());
   if (development)
@@ -35,6 +40,16 @@ export function configureApp(app: INestApplication, development = false) {
       }),
     );
     next();
+  });
+  app.use((request: CorrelatedRequest, response: Response, next: NextFunction) => {
+    response.setHeader('Cache-Control', 'no-store');
+    try {
+      request.clientIp = clientAddress(request, config.TRUSTED_PROXY_IP);
+      limiter.take('api:' + request.clientIp, config.API_RATE_LIMIT, 60000, response);
+      next();
+    } catch (error) {
+      next(error);
+    }
   });
   app.use(json({ limit: '1mb' }));
   app.use(

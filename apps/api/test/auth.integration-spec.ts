@@ -404,6 +404,73 @@ describe('IAM auth security on PostgreSQL', () => {
       await prisma.auditLog.count({ where: { entityId: value.familyId, action: 'auth.login' } }),
     ).toBe(1);
   });
+  it('returns invalid refresh and idempotent logout when pruning removes a hinted family', async () => {
+    for (const route of ['refresh', 'logout']) {
+      const value = await session();
+      await prisma.refreshFamily.update({
+        where: { id: value.familyId },
+        data: {
+          createdAt: new Date(Date.now() - 172800000),
+          expiresAt: new Date(Date.now() - 86400000),
+        },
+      });
+      const original = auth.refreshBinding.bind(auth);
+      const binding = jest
+        .spyOn(auth, 'refreshBinding')
+        .mockImplementationOnce(original)
+        .mockImplementationOnce(async (token) => {
+          const hint = await original(token);
+          await prisma.$transaction(async (tx) => {
+            await tx.refreshSession.deleteMany({ where: { familyId: value.familyId } });
+            await tx.refreshFamily.delete({ where: { id: value.familyId } });
+          });
+          return hint;
+        });
+      try {
+        const response = await mutate(route, value).expect(route === 'refresh' ? 401 : 200);
+        if (route === 'refresh') expect(response.body.error.code).toBe('SESSION_INVALID');
+        else expect(response.body.data.authenticated).toBe(false);
+      } finally {
+        binding.mockRestore();
+      }
+    }
+  });
+  it('counts malformed and oversized bodies before parsing and limits equivalent CSRF routes', async () => {
+    for (const apiLimit of [3, 300]) {
+      const mod = await Test.createTestingModule({ imports: [AppModule] })
+        .overrideProvider(ENVIRONMENT)
+        .useValue({ ...config, API_RATE_LIMIT: apiLimit })
+        .compile();
+      const isolated = mod.createNestApplication();
+      configureApp(isolated);
+      await isolated.init();
+      try {
+        if (apiLimit === 3) {
+          for (const body of ['{', JSON.stringify({ padding: 'x'.repeat(1024 * 1024) }), '{'])
+            await request(isolated.getHttpServer())
+              .post('/api/v1/auth/login')
+              .set('Content-Type', 'application/json')
+              .send(body)
+              .expect(body === '{' ? 400 : 413);
+          const blocked = await request(isolated.getHttpServer())
+            .post('/api/v1/auth/login')
+            .set('Content-Type', 'application/json')
+            .send('{')
+            .expect(429);
+          expect(blocked.body.error.code).toBe('RATE_LIMITED');
+          expect(blocked.body.error.requestId).toBeTruthy();
+        } else {
+          for (let i = 0; i < 60; i++)
+            await request(isolated.getHttpServer())
+              .get(i % 2 ? '/api/v1/auth/csrf/' : '/api/v1/auth/csrf')
+              .expect(200);
+          await request(isolated.getHttpServer()).get('/api/v1/auth/csrf/').expect(429);
+        }
+      } finally {
+        await isolated.close();
+      }
+    }
+  });
   it('enforces production Secure flags and API login limits with Retry-After', async () => {
     const production = {
       ...config,

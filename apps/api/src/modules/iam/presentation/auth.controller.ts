@@ -22,7 +22,7 @@ import { Transform } from 'class-transformer';
 import { IsEmail, IsString, MaxLength, MinLength, Matches } from 'class-validator';
 import { randomBytes } from 'node:crypto';
 import type { Response } from 'express';
-import { AuthRoute, Public, Session } from '../../../common/security/access';
+import { AuthRoute, Session } from '../../../common/security/access';
 import { CsrfService } from '../../../common/security/csrf.service';
 import { cookie, cookieOptions, clearSession } from '../../../common/security/cookies';
 import type { AuthorizedRequest } from '../../../common/security/security.guard';
@@ -112,7 +112,7 @@ export class AuthController {
     return this.config.NODE_ENV === 'production';
   }
   @Get('csrf')
-  @Public()
+  @AuthRoute('csrf')
   @ApiOkResponse({ type: CsrfResponse })
   async bootstrap(
     @Req() request: AuthorizedRequest,

@@ -6,7 +6,8 @@ import { Controller, Get, Post, Body, Module } from '@nestjs/common';
 import { IsString } from 'class-validator';
 import request from 'supertest';
 import { configureApp } from '../src/configure-app';
-import { parseEnvironment } from '../src/config/environment';
+import { ENVIRONMENT, parseEnvironment } from '../src/config/environment';
+import { RateLimiter } from '../src/common/security/rate-limiter';
 class Input {
   @IsString() name!: string;
 }
@@ -22,7 +23,16 @@ class ProbeController {
     throw new Error('private-database-password');
   }
 }
-@Module({ controllers: [ProbeController] })
+@Module({
+  controllers: [ProbeController],
+  providers: [
+    RateLimiter,
+    {
+      provide: ENVIRONMENT,
+      useValue: { API_RATE_LIMIT: 300 },
+    },
+  ],
+})
 class ProbeModule {}
 describe('API foundation contract', () => {
   let app: INestApplication;

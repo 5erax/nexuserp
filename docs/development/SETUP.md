@@ -68,6 +68,8 @@ shadcn/ui dùng cấu hình monorepo trong apps/web và packages/ui; Tailwind v4
 
 ## Kiểm chứng trước khi mở PR
 
+Các lần kiểm chứng gate lỗi, thời gian CI và hot reload Docker được ghi tại [CI_VERIFICATION](CI_VERIFICATION.md).
+
 ```sh
 pnpm lint
 pnpm format:check

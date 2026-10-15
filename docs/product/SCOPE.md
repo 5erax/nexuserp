@@ -11,8 +11,8 @@ Xây một ERP vận hành được cho doanh nghiệp vừa và nhỏ nhiều c
 | Module | Chức năng |
 | --- | --- |
 | IAM & Organization | Đăng nhập, đăng xuất, refresh token rotation, thu hồi phiên; user, role, permission; chi nhánh và quyền truy cập chi nhánh; audit log cho thao tác quản trị |
-| Catalog | Sản phẩm, biến thể và SKU, kho |
-| Inventory | Tồn đầu kỳ, stock ledger, số dư, đặt trước, điều chỉnh có lý do và phê duyệt theo ngưỡng, đối soát |
+| Catalog | Sản phẩm, biến thể và SKU |
+| Inventory | Kho, tồn đầu kỳ, stock ledger, số dư, đặt trước, điều chỉnh có lý do và phê duyệt theo ngưỡng, đối soát |
 | CRM | Khách hàng (hồ sơ và lịch sử giao dịch cơ bản) |
 | Sales | Phase 3: tạo đơn, xác nhận và giữ hàng từ kho mặc định cùng chi nhánh, giao đủ một lần; chỉ hủy khi chưa xuất kho và chưa nhận tiền; lịch sử sự kiện |
 | Finance (tối giản) | Phase 3: module Finance sở hữu khoản thanh toán thủ công vào đơn; trạng thái thanh toán suy ra từ tổng tiền đã ghi nhận |

@@ -25,8 +25,8 @@ NexusERP không nhằm làm ra thêm một bộ giao diện CRUD. Dự án phả
 | Module | Nội dung |
 | --- | --- |
 | IAM & Organization | Đăng nhập, refresh token rotation, user, role, permission, chi nhánh, audit log |
-| Catalog | Sản phẩm, biến thể (SKU), kho |
-| Inventory | Tồn đầu kỳ, stock ledger, đặt trước (reservation), điều chỉnh có phê duyệt |
+| Catalog | Sản phẩm, biến thể (SKU) |
+| Inventory | Kho, tồn đầu kỳ, stock ledger, đặt trước (reservation), điều chỉnh có phê duyệt |
 | CRM | Khách hàng |
 | Sales | Đơn hàng, xác nhận và giữ hàng, giao đủ một lần, hủy trước khi xuất kho |
 | Finance (tối giản) | Ghi nhận thanh toán thủ công vào đơn từ Phase 3; chưa có hóa đơn, công nợ, hoàn tiền |

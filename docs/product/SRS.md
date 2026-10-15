@@ -387,6 +387,7 @@ erDiagram
         uuid warehouse_id FK
         uuid variant_id FK
         decimal quantity_delta
+        decimal unit_cost "nullable; NULL khác 0"
         string reference_type
         uuid reference_id
     }
@@ -486,6 +487,8 @@ erDiagram
     }
     PAYMENTS {
         uuid id PK
+        uuid organization_id FK
+        uuid sales_order_id FK
         decimal amount
         string status
         string external_reference
@@ -528,6 +531,7 @@ erDiagram
     GOODS_RECEIPT_ITEMS }o--|| GOODS_RECEIPTS : "receipt_id"
     GOODS_RECEIPT_ITEMS }o--|| PURCHASE_ORDER_ITEMS : "purchase_item_id"
     INVOICES }o--|| SALES_ORDERS : "sales_order_id"
+    PAYMENTS }o--|| SALES_ORDERS : "organization_id, sales_order_id"
     PAYMENT_ALLOCATIONS }o--|| PAYMENTS : "payment_id"
     PAYMENT_ALLOCATIONS }o--|| INVOICES : "invoice_id"
     JOURNAL_LINES }o--|| JOURNAL_ENTRIES : "journal_entry_id"
@@ -538,6 +542,8 @@ erDiagram
 
 Một bút toán kế toán chỉ được posted khi tổng debit bằng tổng credit trong cùng loại tiền và đúng kỳ kế toán. Đối với doanh nghiệp Việt Nam, đây mới là phần mô hình kế toán nền tảng, không thay thế việc thiết kế chế độ kế toán phù hợp.
 
+Phase 3 chỉ triển khai payment thủ công liên kết trực tiếp đơn bằng khóa ghép `(organization_id, sales_order_id)` theo ADR-0014. Invoice, allocation và journal trong sơ đồ là Phase 5; payment thủ công được posted ngay trong transaction, không qua provider.
+
 ## VI. API Design — REST API v1
 
 Toàn bộ API dùng prefix `/api/v1`, JSON, OpenAPI và quy chuẩn response/error thống nhất.
@@ -546,6 +552,7 @@ Toàn bộ API dùng prefix `/api/v1`, JSON, OpenAPI và quy chuẩn response/er
 
 | Method | Endpoint                 | Mục đích            |
 | ------ | ------------------------ | ------------------- |
+| GET    | `/auth/csrf`             | Bootstrap CSRF trước đăng nhập và cấp lại token theo phiên |
 | POST   | `/auth/login`            | Đăng nhập           |
 | POST   | `/auth/refresh`          | Làm mới phiên       |
 | POST   | `/auth/logout`           | Thu hồi phiên       |
@@ -727,7 +734,7 @@ Nếu bất kỳ SKU nào không đủ, toàn bộ transaction rollback; không 
 
 Đối với đơn nhiều SKU, cần thứ tự khóa cố định, constraint phù hợp và retry có giới hạn cho transaction conflict/deadlock. PostgreSQL hỗ trợ row-level locking, còn Prisma cung cấp các cơ chế transaction và optimistic concurrency; cú pháp sử dụng phải nhất quán với phiên bản Prisma được chọn.
 
-Đối với thanh toán, không thể đơn giản gói cả payment provider vào database transaction. Thay vào đó phải thiết kế trạng thái `PENDING → SUCCEEDED/FAILED`, xác minh webhook, idempotency và reconciliation.
+MVP ghi nhận tiền thủ công trong transaction: khóa đơn, kiểm tra trạng thái và tổng đã thu, ghi payment bất biến cùng audit và outbox theo ADR-0014. Nếu tích hợp payment provider sau MVP, cần trạng thái `PENDING → SUCCEEDED/FAILED`, xác minh webhook, idempotency và reconciliation; không giữ transaction database trong lúc gọi provider.
 
 ## VIII. UI/UX — Những màn hình phải có
 

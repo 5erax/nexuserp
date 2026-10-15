@@ -40,6 +40,7 @@ test('real login, required password change, shared-tab refresh and logout', asyn
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Business Owner');
   await page.goto('/login');
   await expect(page).toHaveURL(/\/workspace$/);
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Business Owner');
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
   await context.clearCookies({ name: 'nexus_access' });
   const second = await context.newPage();

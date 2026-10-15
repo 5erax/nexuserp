@@ -41,6 +41,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiErrorResponse"
+        "413":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
         "422":
           description: API error; inspect error.code and error.requestId
           content:
@@ -108,6 +114,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiErrorResponse"
+        "413":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
         "422":
           description: API error; inspect error.code and error.requestId
           content:
@@ -131,7 +143,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                $ref: "#/components/schemas/ApiErrorResponse"
       tags: *a1
   /api/v1/auth/csrf:
     get:
@@ -169,6 +181,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/ApiErrorResponse"
         "409":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "413":
           description: API error; inspect error.code and error.requestId
           content:
             application/json:
@@ -252,6 +270,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiErrorResponse"
+        "413":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
         "422":
           description: API error; inspect error.code and error.requestId
           content:
@@ -318,6 +342,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/ApiErrorResponse"
         "409":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "413":
           description: API error; inspect error.code and error.requestId
           content:
             application/json:
@@ -396,6 +426,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiErrorResponse"
+        "413":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
         "422":
           description: API error; inspect error.code and error.requestId
           content:
@@ -459,6 +495,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/ApiErrorResponse"
         "409":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "413":
           description: API error; inspect error.code and error.requestId
           content:
             application/json:
@@ -538,6 +580,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/ApiErrorResponse"
         "409":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "413":
           description: API error; inspect error.code and error.requestId
           content:
             application/json:
@@ -627,6 +675,22 @@ components:
         details:
           type: object
           nullable: true
+          oneOf:
+            - type: object
+              additionalProperties: {}
+            - type: array
+              items:
+                type: object
+                required:
+                  - field
+                  - messages
+                properties:
+                  field:
+                    type: string
+                  messages:
+                    type: array
+                    items:
+                      type: string
         requestId:
           type: string
       required:
@@ -634,7 +698,7 @@ components:
         - message
         - details
         - requestId
-    ErrorResponse:
+    ApiErrorResponse:
       type: object
       properties:
         error:
@@ -764,10 +828,3 @@ components:
       required:
         - currentPassword
         - newPassword
-    ApiErrorResponse:
-      type: object
-      properties:
-        error:
-          $ref: "#/components/schemas/ApiError"
-      required:
-        - error

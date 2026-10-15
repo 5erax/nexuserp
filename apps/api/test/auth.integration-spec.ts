@@ -377,6 +377,17 @@ describe('IAM auth security on PostgreSQL', () => {
     );
     expect(flags).toContain('Max-Age=600');
     expect(response.body.data.csrfToken).not.toBe(value.csrfToken);
+    const preCookies = (response.headers['set-cookie'] as unknown as string[])
+      .map((v) => v.split(';')[0])
+      .join('; ');
+    const invalid = await request(app.getHttpServer())
+      .post('/api/v1/auth/refresh')
+      .set('Origin', config.WEB_ORIGIN)
+      .set('Cookie', `nexus_refresh=${value.refreshToken}; ${preCookies}`)
+      .set('X-CSRF-Token', response.body.data.csrfToken)
+      .expect(401);
+    expect(invalid.body.error.code).toBe('SESSION_INVALID');
+    expect(invalid.headers['set-cookie']).toBeDefined();
     const active = await session();
     await mutate('refresh', active).expect(200);
     const candidate = await prisma.refreshFamily.findUniqueOrThrow({
@@ -413,6 +424,12 @@ describe('IAM auth security on PostgreSQL', () => {
       const preCookies = (bootstrap.headers['set-cookie'] as unknown as string[])
         .map((v) => v.split(';')[0])
         .join('; ');
+      for (let attempt = 0; attempt < 12; attempt++)
+        await request(isolated.getHttpServer())
+          .post('/api/v1/auth/login')
+          .set('Origin', 'https://evil.example')
+          .send({ organizationCode, email, password })
+          .expect(403);
       const login = await request(isolated.getHttpServer())
         .post('/api/v1/auth/login')
         .set('Origin', production.WEB_ORIGIN)

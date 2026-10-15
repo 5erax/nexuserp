@@ -15,6 +15,7 @@ import { ACCESS, type AccessPolicy } from './access';
 import { cookie } from './cookies';
 import { CsrfService } from './csrf.service';
 import { RateLimiter } from './rate-limiter';
+import { clientAddress } from './client-address';
 export type AuthorizedRequest = CorrelatedRequest & { actor: Actor };
 @Injectable()
 export class SecurityGuard implements CanActivate {
@@ -33,7 +34,11 @@ export class SecurityGuard implements CanActivate {
       context.getHandler(),
       context.getClass(),
     ]);
-    const ip = request.socket.remoteAddress ?? 'unknown';
+    const unsafe = !['GET', 'HEAD', 'OPTIONS'].includes(request.method);
+    if (unsafe && request.headers.origin !== this.config.WEB_ORIGIN)
+      throw new ForbiddenException({ code: 'CSRF_INVALID', message: 'Nguồn yêu cầu không hợp lệ' });
+    const ip = clientAddress(request, this.config.TRUSTED_PROXY_IP);
+    request.clientIp = ip;
     this.limiter.take('api:' + ip, this.config.API_RATE_LIMIT, 60000, response);
     if (policy === 'login') {
       this.limiter.take('login-ip:' + ip, 10, 900000, response);
@@ -49,19 +54,24 @@ export class SecurityGuard implements CanActivate {
     if (policy === 'refresh') this.limiter.take('refresh:' + ip, 60, 60000, response);
     if (policy === 'public' && request.path === '/api/v1/auth/csrf')
       this.limiter.take('csrf:' + ip, 60, 60000, response);
-    const unsafe = !['GET', 'HEAD', 'OPTIONS'].includes(request.method);
-    if (unsafe && request.headers.origin !== this.config.WEB_ORIGIN)
-      throw new ForbiddenException({ code: 'CSRF_INVALID', message: 'Nguồn yêu cầu không hợp lệ' });
     if (policy === 'public' && !unsafe) return true;
     let binding: string | undefined;
     if (policy === 'login') binding = this.csrf.preauthBinding(cookie(request, 'nexus_preauth'));
     else if (policy === 'refresh' || policy === 'logout') {
       const refresh = await this.auth.refreshBinding(cookie(request, 'nexus_refresh'));
-      binding = refresh
-        ? 'family:' + refresh.familyId
-        : policy === 'logout'
-          ? this.csrf.preauthBinding(cookie(request, 'nexus_preauth'))
-          : undefined;
+      const familyBinding = refresh ? 'family:' + refresh.familyId : undefined;
+      const active =
+        refresh &&
+        !refresh.revokedAt &&
+        !refresh.family.revokedAt &&
+        refresh.family.expiresAt > new Date() &&
+        refresh.expiresAt > new Date() &&
+        refresh.family.user.status === 'ACTIVE';
+      const preauthBinding = this.csrf.preauthBinding(cookie(request, 'nexus_preauth'));
+      const header = request.headers['x-csrf-token'];
+      const preauthValid =
+        preauthBinding && typeof header === 'string' && this.csrf.valid(preauthBinding, header);
+      binding = active ? familyBinding : preauthValid ? preauthBinding : familyBinding;
     } else {
       request.actor = await this.auth.actor(cookie(request, 'nexus_access'));
       binding = 'family:' + request.actor.familyId;

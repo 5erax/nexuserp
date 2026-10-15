@@ -5,6 +5,7 @@ import { cookie, cookieOptions } from '../src/common/security/cookies';
 import { PasswordService } from '../src/modules/iam/application/password.service';
 import { scopeFilter, canGrant, type Actor } from '../src/modules/iam/domain/access-scope';
 import { parseEnvironment } from '../src/config/environment';
+import { clientAddress } from '../src/common/security/client-address';
 import type { Request, Response } from 'express';
 const config = () =>
   parseEnvironment({
@@ -13,6 +14,22 @@ const config = () =>
     CSRF_SECRET: randomBytes(32).toString('hex'),
   });
 describe('auth trust boundaries', () => {
+  it('uses forwarded identity only from the pinned proxy and separates client quotas', () => {
+    const req = (peer: string, forwarded: string) =>
+      ({
+        socket: { remoteAddress: peer },
+        headers: { 'x-forwarded-for': forwarded },
+      }) as unknown as Pick<Request, 'socket' | 'headers'>;
+    expect(clientAddress(req('10.0.0.2', '198.51.100.1'), '10.0.0.10')).toBe('10.0.0.2');
+    const one = clientAddress(req('10.0.0.10', '198.51.100.1'), '10.0.0.10');
+    const two = clientAddress(req('10.0.0.10', '198.51.100.2'), '10.0.0.10');
+    expect(() => clientAddress(req('10.0.0.10', '198.51.100.1, 10.0.0.3'), '10.0.0.10')).toThrow();
+    const limiter = new RateLimiter();
+    const response = { setHeader: jest.fn() } as unknown as Response;
+    limiter.take(one, 1, 60000, response);
+    expect(() => limiter.take(one, 1, 60000, response)).toThrow();
+    expect(() => limiter.take(two, 1, 60000, response)).not.toThrow();
+  });
   it('IAM-007 binds signed double-submit tokens to one family', () => {
     const csrf = new CsrfService(config());
     const token = csrf.issue('family:A');

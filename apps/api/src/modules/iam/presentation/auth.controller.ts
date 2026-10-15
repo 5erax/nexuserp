@@ -97,7 +97,7 @@ class ProfileResponse {
 }
 const auditContext = (request: AuthorizedRequest) => ({
   requestId: request.requestId,
-  ip: request.socket.remoteAddress?.slice(0, 64),
+  ip: (request.clientIp ?? request.socket.remoteAddress)?.slice(0, 64),
   userAgent: request.headers['user-agent']?.slice(0, 512),
 });
 @ApiTags('auth')

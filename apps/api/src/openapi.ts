@@ -19,7 +19,7 @@ export function createOpenApi(app: INestApplication) {
     for (const method of ['get', 'post', 'put', 'patch', 'delete'] as const) {
       const operation = path?.[method];
       if (!operation) continue;
-      for (const status of [400, 401, 403, 404, 409, 422, 429, 500, 503])
+      for (const status of [400, 401, 403, 404, 409, 413, 422, 429, 500, 503])
         operation.responses[String(status)] ??= {
           description: 'API error; inspect error.code and error.requestId',
           content: {

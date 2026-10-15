@@ -1,12 +1,17 @@
 import { randomUUID } from 'node:crypto';
-import { BadRequestException, INestApplication, Logger, ValidationPipe } from '@nestjs/common';
+import {
+  BadRequestException,
+  HttpException,
+  INestApplication,
+  Logger,
+  ValidationPipe,
+} from '@nestjs/common';
 import helmet from 'helmet';
 import type { Response, NextFunction } from 'express';
 import { json } from 'express';
 import { ApiExceptionFilter, CorrelatedRequest, EnvelopeInterceptor } from './common/http';
 export function configureApp(app: INestApplication, development = false) {
   app.setGlobalPrefix('api/v1');
-  app.use(json({ limit: '1mb' }));
   app.use(helmet());
   if (development)
     app.use('/api/docs', (_request: CorrelatedRequest, response: Response, next: NextFunction) => {
@@ -31,6 +36,24 @@ export function configureApp(app: INestApplication, development = false) {
     );
     next();
   });
+  app.use(json({ limit: '1mb' }));
+  app.use(
+    (error: unknown, _request: CorrelatedRequest, _response: Response, next: NextFunction) => {
+      const type =
+        typeof error === 'object' && error !== null && 'type' in error ? error.type : undefined;
+      if (type === 'entity.parse.failed' || type === 'entity.too.large') {
+        next(
+          new HttpException(
+            {
+              code: type === 'entity.too.large' ? 'PAYLOAD_TOO_LARGE' : 'VALIDATION_ERROR',
+              message: 'Nội dung yêu cầu không hợp lệ',
+            },
+            type === 'entity.too.large' ? 413 : 400,
+          ),
+        );
+      } else next(error);
+    },
+  );
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,

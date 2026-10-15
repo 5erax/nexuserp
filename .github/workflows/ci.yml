@@ -76,6 +76,7 @@ jobs:
       CSRF_SECRET: container_ci_csrf_key_only_not_for_deployment
       POSTGRES_PASSWORD: 'ci#only?%'
       COMPOSE_DATABASE_URL: postgresql://nexus:ci%23only%3F%25@postgres:5432/nexuserp
+      API_RATE_LIMIT: 20
     steps:
       - uses: actions/checkout@v4
       - name: Build and start Compose
@@ -92,6 +93,27 @@ jobs:
         run: |
           test "$(docker compose exec -T api id -u)" != 0
           test "$(docker compose exec -T web id -u)" != 0
+          test "$(docker compose exec -T edge id -u)" != 0
+          docker compose exec -T edge nginx -t
+      - name: Verify trusted proxy isolation and spoof resistance
+        run: |
+          docker compose run -d --no-deps --name nexuserp-rate-a web node -e 'setInterval(()=>{},60000)'
+          docker compose run -d --no-deps --name nexuserp-rate-b web node -e 'setInterval(()=>{},60000)'
+          docker cp infrastructure/docker/check-proxy.cjs nexuserp-rate-a:/tmp/check-proxy.cjs
+          docker cp infrastructure/docker/check-proxy.cjs nexuserp-rate-b:/tmp/check-proxy.cjs
+          docker exec nexuserp-rate-a node /tmp/check-proxy.cjs blocked
+          docker exec nexuserp-rate-b node /tmp/check-proxy.cjs fresh
+      - name: Verify database volume survives restart
+        run: |
+          docker compose exec -T postgres psql -U nexus -d nexuserp -v ON_ERROR_STOP=1 -c "INSERT INTO organizations(id,code,name,updated_at) VALUES ('a63cc6bd-af86-4dbc-a0c3-5fd07c689e33','CI-PERSISTENCE','CI fixture',now())"
+          docker compose restart postgres
+          for i in $(seq 1 30); do
+            if docker compose exec -T postgres pg_isready -U nexus -d nexuserp; then break; fi
+            sleep 1
+          done
+          test "$(docker compose exec -T postgres psql -U nexus -d nexuserp -Atc "SELECT count(*) FROM organizations WHERE code='CI-PERSISTENCE'")" = 1
       - name: Stop isolated CI containers
         if: always()
-        run: docker compose --profile app down -v
+        run: |
+          docker rm -f nexuserp-rate-a nexuserp-rate-b || true
+          docker compose --profile app down -v

@@ -28,7 +28,8 @@
         "WEB_ORIGIN",
         "JWT_SECRET",
         "CSRF_SECRET",
-        "API_RATE_LIMIT"
+        "API_RATE_LIMIT",
+        "TRUSTED_PROXY_IP"
       ]
     }
   }

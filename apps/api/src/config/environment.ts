@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { isIP } from 'node:net';
 export const ENVIRONMENT = Symbol('ENVIRONMENT');
 const schema = z.object({
   DATABASE_URL: z
@@ -11,6 +12,10 @@ const schema = z.object({
   JWT_SECRET: z.string().min(32).max(256),
   CSRF_SECRET: z.string().min(32).max(256),
   API_RATE_LIMIT: z.coerce.number().int().min(1).max(10000).default(300),
+  TRUSTED_PROXY_IP: z
+    .string()
+    .refine((value) => isIP(value) !== 0)
+    .optional(),
 });
 export type Environment = z.infer<typeof schema>;
 export function parseEnvironment(input: Record<string, unknown>): Environment {

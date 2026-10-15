@@ -46,6 +46,8 @@ docker compose --profile app logs -f
 
 Profile `app` build image production, migrate trước API, chờ readiness trước khi chạy web. API không mở port ra host; truy cập qua web tại `localhost:3000`. API/web chạy bằng user `node`, không phải root. Migration chạy ở container riêng có công cụ CLI; image API chỉ giữ bản deploy production.
 
+Profile `app` có Nginx ingress non-root trên cổng host 3000: `/api/` tới API, các trang tới web. Ingress ghi đè header IP; API chỉ tin địa chỉ cố định của ingress để quota từng client không bị gộp thành quota của web container. Native `pnpm dev` vẫn dùng Next rewrite cho máy local; cấu hình proxy demo khác phải kiểm chứng spoof/IP isolation theo CONFIGURATION.
+
 Xác thực của profile production yêu cầu TLS proxy bên ngoài, WEB_ORIGIN HTTPS đúng tên miền và secret đã thay; health vẫn kiểm tra được qua HTTP loopback trong CI. Phát triển đăng nhập local qua profile `dev`/`pnpm dev`, không tắt Secure trong cấu hình production để né HTTPS.
 
 ```sh

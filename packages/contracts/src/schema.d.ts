@@ -150,10 +150,15 @@ export interface components {
         ApiError: {
             code: string;
             message: string;
-            details: Record<string, never> | null;
+            details: ({
+                [key: string]: unknown;
+            } | {
+                field: string;
+                messages: string[];
+            }[]) | null;
             requestId: string;
         };
-        ErrorResponse: {
+        ApiErrorResponse: {
             error: components["schemas"]["ApiError"];
         };
         CsrfData: {
@@ -199,9 +204,6 @@ export interface components {
         ChangePasswordInput: {
             currentPassword: string;
             newPassword: string;
-        };
-        ApiErrorResponse: {
-            error: components["schemas"]["ApiError"];
         };
     };
     responses: never;
@@ -267,6 +269,15 @@ export interface operations {
             };
             /** @description API error; inspect error.code and error.requestId */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description API error; inspect error.code and error.requestId */
+            413: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -375,6 +386,15 @@ export interface operations {
                 };
             };
             /** @description API error; inspect error.code and error.requestId */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description API error; inspect error.code and error.requestId */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -406,7 +426,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
+                    "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
         };
@@ -466,6 +486,15 @@ export interface operations {
             };
             /** @description API error; inspect error.code and error.requestId */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description API error; inspect error.code and error.requestId */
+            413: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -580,6 +609,15 @@ export interface operations {
                 };
             };
             /** @description API error; inspect error.code and error.requestId */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description API error; inspect error.code and error.requestId */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -674,6 +712,15 @@ export interface operations {
             };
             /** @description API error; inspect error.code and error.requestId */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description API error; inspect error.code and error.requestId */
+            413: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -784,6 +831,15 @@ export interface operations {
                 };
             };
             /** @description API error; inspect error.code and error.requestId */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description API error; inspect error.code and error.requestId */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -876,6 +932,15 @@ export interface operations {
             };
             /** @description API error; inspect error.code and error.requestId */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description API error; inspect error.code and error.requestId */
+            413: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -982,6 +1047,15 @@ export interface operations {
             };
             /** @description API error; inspect error.code and error.requestId */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description API error; inspect error.code and error.requestId */
+            413: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "dev": "pnpm db:generate && nest start --watch",
+    "dev": "pnpm db:generate && nest start --watch --no-shell",
     "build": "pnpm db:generate && tsc -p tsconfig.build.json",
     "start": "node dist/main.js",
     "typecheck": "pnpm db:generate && tsc --noEmit",

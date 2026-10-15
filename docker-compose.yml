@@ -83,7 +83,10 @@ services:
     ports: ['127.0.0.1:3000:3000']
     volumes:
       - ./apps/web/app:/workspace/apps/web/app
+      - ./apps/web/components:/workspace/apps/web/components
+      - ./apps/web/lib:/workspace/apps/web/lib
       - ./apps/web/messages:/workspace/apps/web/messages
+      - ./packages/contracts/src:/workspace/packages/contracts/src
       - ./packages/ui/src:/workspace/packages/ui/src
     depends_on: [api-dev]
 volumes:

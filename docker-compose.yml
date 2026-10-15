@@ -29,6 +29,11 @@ services:
       DATABASE_URL: ${COMPOSE_DATABASE_URL:?Set COMPOSE_DATABASE_URL with percent-encoded credentials}
       API_PORT: 3001
       NODE_ENV: production
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET}
+      CSRF_SECRET: ${CSRF_SECRET:?Set CSRF_SECRET}
+      WEB_ORIGIN: ${WEB_ORIGIN:-https://localhost:3000}
+      TRUSTED_PROXY_IP: 172.29.241.10
+      API_RATE_LIMIT: ${API_RATE_LIMIT:-300}
     depends_on: { migrate: { condition: service_completed_successfully } }
     healthcheck:
       test:
@@ -44,8 +49,17 @@ services:
   web:
     profiles: [app]
     build: { context: ., dockerfile: infrastructure/docker/Dockerfile, target: web }
-    ports: ['127.0.0.1:3000:3000']
     depends_on: { api: { condition: service_healthy } }
+  edge:
+    profiles: [app]
+    image: nginx:1.30.6-alpine
+    user: '101:101'
+    entrypoint: ['nginx']
+    command: ['-g', 'daemon off;']
+    ports: ['127.0.0.1:3000:8080']
+    volumes: ['./infrastructure/docker/nginx.conf:/etc/nginx/nginx.conf:ro']
+    networks: { default: { ipv4_address: 172.29.241.10 } }
+    depends_on: { api: { condition: service_healthy }, web: { condition: service_started } }
   api-dev:
     profiles: [dev]
     build: { context: ., dockerfile: infrastructure/docker/Dockerfile, target: development }
@@ -54,6 +68,9 @@ services:
       DATABASE_URL: ${COMPOSE_DATABASE_URL:?Set COMPOSE_DATABASE_URL with percent-encoded credentials}
       API_PORT: 3001
       NODE_ENV: development
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET}
+      CSRF_SECRET: ${CSRF_SECRET:?Set CSRF_SECRET}
+      WEB_ORIGIN: http://localhost:3000
     ports: ['127.0.0.1:3001:3001']
     volumes:
       - ./apps/api/src:/workspace/apps/api/src
@@ -71,3 +88,7 @@ services:
     depends_on: [api-dev]
 volumes:
   postgres-data:
+networks:
+  default:
+    ipam:
+      config: [{ subnet: 172.29.241.0/24, ip_range: 172.29.241.128/25 }]

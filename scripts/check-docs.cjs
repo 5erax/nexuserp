@@ -20,7 +20,7 @@ for (const name of ['IAM', 'INVENTORY', 'SALES', 'PURCHASING', 'FINANCE']) {
     .split('\n')
     .filter((line) => /^\| (IAM|INV|SAL|PUR|FIN)-\d{3} \|/.test(line))) {
     assert(
-      row.includes('planned:#') || row.includes('.spec.ts'),
+      row.includes('planned:#') || /\.(?:integration-)?spec\.ts/.test(row),
       'Rule requires a planned or implemented test',
     );
   }

@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { map } from 'rxjs';
-export type CorrelatedRequest = Request & { requestId: string };
+export type CorrelatedRequest = Request & { requestId: string; clientIp?: string };
 @Injectable()
 export class EnvelopeInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler) {

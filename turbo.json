@@ -20,7 +20,17 @@
     "dev": {
       "cache": false,
       "persistent": true,
-      "passThroughEnv": ["DATABASE_URL", "API_INTERNAL_URL", "API_PORT", "NODE_ENV", "WEB_ORIGIN"]
+      "passThroughEnv": [
+        "DATABASE_URL",
+        "API_INTERNAL_URL",
+        "API_PORT",
+        "NODE_ENV",
+        "WEB_ORIGIN",
+        "JWT_SECRET",
+        "CSRF_SECRET",
+        "API_RATE_LIMIT",
+        "TRUSTED_PROXY_IP"
+      ]
     }
   }
 }

@@ -20,7 +20,7 @@ export async function seedPermissionCatalog(tx: Prisma.TransactionClient) {
 }
 
 export async function seedIam(tx: Prisma.TransactionClient, organizationId: string) {
-  await tx.$queryRaw`SELECT id FROM organizations WHERE id = ${organizationId}::uuid FOR UPDATE`;
+  await tx.$queryRaw`SELECT id FROM organizations WHERE id = ${organizationId}::uuid FOR NO KEY UPDATE`;
   const permissions = await seedPermissionCatalog(tx);
   for (const [code, name] of Object.entries(SYSTEM_ROLES)) {
     const role = await tx.role.upsert({

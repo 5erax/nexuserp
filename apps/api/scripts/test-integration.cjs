@@ -10,7 +10,15 @@ const prisma = path.join(path.dirname(require.resolve('prisma/package.json')), '
 const jest = require.resolve('jest/bin/jest');
 for (const [file, args] of [
   [prisma, ['migrate', 'deploy']],
-  [jest, ['--runInBand', '--testMatch=**/*.integration-spec.ts']],
+  [
+    jest,
+    [
+      '--runInBand',
+      '--testMatch=**/*.integration-spec.ts',
+      '--coverage',
+      '--coverageDirectory=coverage/integration',
+    ],
+  ],
 ]) {
   const result = spawnSync(process.execPath, [file, ...args], { env, stdio: 'inherit' });
   if (result.error) throw result.error;

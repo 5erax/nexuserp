@@ -4,10 +4,10 @@ Nguồn [SRS](../product/SRS.md), các ADR đã Accepted và [ma trận quyền]
 
 | ID | Phát biểu | Phase | Nơi thực thi | Test tham chiếu | Trạng thái |
 | --- | --- | --- | --- | --- | --- |
-| IAM-001 | Email đăng nhập phải duy nhất trong phạm vi tổ chức theo chính sách xác định trước | 1 | normalize + unique(organization_id,email) | planned:#32, planned:#33 | Chưa triển khai |
-| IAM-002 | Chỉ tài khoản ACTIVE mới được thực hiện nghiệp vụ | 1 | auth guard kiểm tra user.status trên mỗi request | planned:#33, planned:#38 | Chưa triển khai |
-| IAM-003 | Mọi thao tác nghiệp vụ phải được kiểm tra permission tại Backend | 1 | permission guard deny default | planned:#36, planned:#45 | Chưa triển khai |
-| IAM-004 | Nhân viên chỉ được truy cập chi nhánh được cấp quyền | 1 | AccessScope và composite organization FK | planned:#37, planned:#45 | Chưa triển khai |
-| IAM-005 | Hành động đặc quyền phải có audit trail | 1 | audit cùng transaction; payload allowlist | planned:#41, planned:#45 | Chưa triển khai |
+| IAM-001 | Email đăng nhập phải duy nhất trong phạm vi tổ chức theo chính sách xác định trước | 1 | normalize + unique(organization_id,email) | apps/api/test/iam-schema.integration-spec.ts, auth.integration-spec.ts | Schema/login đã kiểm chứng |
+| IAM-002 | Chỉ tài khoản ACTIVE mới được thực hiện nghiệp vụ | 1 | auth guard kiểm tra user.status trên mỗi request | apps/api/test/auth.integration-spec.ts; planned:#38 cho disable API | Auth đã kiểm chứng; quản trị còn lại |
+| IAM-003 | Mọi thao tác nghiệp vụ phải được kiểm tra permission tại Backend | 1 | permission guard deny default | apps/api/test/auth.integration-spec.ts (reflection,401/403), permission-catalog.spec.ts | Guard đã kiểm chứng |
+| IAM-004 | Nhân viên chỉ được truy cập chi nhánh được cấp quyền | 1 | AccessScope và composite organization FK | apps/api/test/security.spec.ts, iam-schema.integration-spec.ts; planned:#37, planned:#45 cho CRUD IDOR | Helper/FK đã kiểm chứng; API còn lại |
+| IAM-005 | Hành động đặc quyền phải có audit trail | 1 | audit cùng transaction; tự che trường nhạy cảm | apps/api/test/audit.integration-spec.ts, auth.integration-spec.ts; planned:#41 cho endpoint tra cứu | Auth/audit persistence đã kiểm chứng |
 | IAM-006 | Không được vô hiệu hóa quản trị viên hoạt động cuối cùng của tổ chức | 1 | khóa organization rồi đếm admin ACTIVE | planned:#38, planned:#45 | Chưa triển khai |
-| IAM-007 | Refresh token phải hỗ trợ rotation và revocation | 1 | khóa family rồi session; hash unique; expiry tuyệt đối | planned:#34, planned:#45 | Chưa triển khai |
+| IAM-007 | Refresh token phải hỗ trợ rotation và revocation | 1 | khóa family rồi session; hash unique; expiry tuyệt đối | apps/api/test/auth.integration-spec.ts (barrier,5s,replay,logout,rollback,expiry) | Server đã kiểm chứng; browser và admin race tiếp theo |

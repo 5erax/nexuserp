@@ -4,6 +4,7 @@ module.exports = {
   testMatch: ['**/*.spec.ts', '**/*.integration-spec.ts'],
   clearMocks: true,
   testTimeout: 15000,
-  collectCoverageFrom: ['src/**/*.ts', '!src/generated/**', '!src/main.ts'],
+  collectCoverageFrom: ['src/**/application/**/*.ts', 'src/**/domain/**/*.ts'],
+  coverageReporters: ['json', 'lcov', 'text-summary'],
   coverageDirectory: 'coverage',
 };

@@ -4,6 +4,8 @@ Phiên bản trực tiếp được ghim và dependency gián tiếp được kh
 
 ## Vá gián tiếp có chủ đích
 
+Auth dùng `@node-rs/argon2` 2.2.2 (Argon2id, binary theo platform qua optional dependency, không install script mới) và `@nestjs/jwt` 11.0.2. Giữ JWT major 11 tương thích Nest 11/CommonJS/Jest 29; major 12 chuyển pure ESM theo [release notes](https://github.com/nestjs/jwt/releases/tag/12.0.0) và không chạy được trong Jest hiện tại. Không thay cả module/test runtime để nâng một dependency. Audit production và test hash/JWT trên Windows/Linux phải pass khi đổi phiên bản.
+
 `package.json` có override giới hạn phạm vi cho js-yaml 4.3.2, mysql2 3.23.1, smol-toml 1.9.0 và KaTeX 0.18.2 để xử lý advisory hiện tại. Không ép js-yaml 3 sang major 4.
 
 Riêng `@prisma/config > deepmerge-ts` dùng 8.0.2 vì [GHSA-ggr8-5vv4-36mx](https://github.com/advisories/GHSA-ggr8-5vv4-36mx). Đã đọc [release notes major 8](https://github.com/RebeccaStevens/deepmerge-ts/releases/tag/v8.0.0): Map merge thay đổi, nhưng cấu hình Prisma của dự án chỉ chứa object/string/function, không Map hoặc custom merger. Kiểm chứng lại generate, migrate deploy, diff và test PostgreSQL khi đổi override này. Gỡ override khi Prisma ổn định cập nhật dependency an toàn.

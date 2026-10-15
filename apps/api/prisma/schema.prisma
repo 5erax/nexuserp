@@ -9,16 +9,17 @@ datasource db {
 }
 
 model Organization {
-  id        String   @id @default(uuid()) @db.Uuid
-  code      String   @unique @db.VarChar(32)
-  name      String   @db.VarChar(200)
-  currency  String   @default("VND") @db.VarChar(3)
-  timezone  String   @default("Asia/Ho_Chi_Minh") @db.VarChar(64)
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  id        String     @id @default(uuid()) @db.Uuid
+  code      String     @unique @db.VarChar(32)
+  name      String     @db.VarChar(200)
+  currency  String     @default("VND") @db.VarChar(3)
+  timezone  String     @default("Asia/Ho_Chi_Minh") @db.VarChar(64)
+  createdAt DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime   @updatedAt @map("updated_at") @db.Timestamptz(3)
   branches  Branch[]
   users     User[]
   roles     Role[]
+  auditLogs AuditLog[]
 
   @@map("organizations")
 }
@@ -33,6 +34,7 @@ model Branch {
   updatedAt      DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
   organization   Organization       @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   userAccess     UserBranchAccess[]
+  auditLogs      AuditLog[]
 
   @@unique([organizationId, code])
   @@unique([organizationId, id])
@@ -53,6 +55,7 @@ model User {
   roles              UserRole[]
   branches           UserBranchAccess[]
   families           RefreshFamily[]
+  auditLogs          AuditLog[]
 
   @@unique([organizationId, email])
   @@unique([organizationId, id])
@@ -159,4 +162,27 @@ model RefreshSession {
   @@unique([familyId, replacedBy])
   @@index([familyId, expiresAt])
   @@map("refresh_sessions")
+}
+
+model AuditLog {
+  id             String       @id @default(uuid()) @db.Uuid
+  organizationId String       @map("organization_id") @db.Uuid
+  branchId       String?      @map("branch_id") @db.Uuid
+  actorId        String?      @map("actor_id") @db.Uuid
+  action         String       @db.VarChar(100)
+  entityType     String       @map("entity_type") @db.VarChar(64)
+  entityId       String?      @map("entity_id") @db.Uuid
+  requestId      String       @map("request_id") @db.VarChar(64)
+  ip             String?      @db.VarChar(64)
+  userAgent      String?      @map("user_agent") @db.VarChar(512)
+  changes        Json
+  createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  branch         Branch?      @relation(fields: [organizationId, branchId], references: [organizationId, id], onDelete: Restrict)
+  actor          User?        @relation(fields: [organizationId, actorId], references: [organizationId, id], onDelete: Restrict)
+
+  @@index([organizationId, createdAt, id])
+  @@index([organizationId, branchId, createdAt])
+  @@index([organizationId, entityType, entityId])
+  @@map("audit_logs")
 }

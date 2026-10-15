@@ -6,7 +6,8 @@ import { Controller, Get, Post, Body, Module } from '@nestjs/common';
 import { IsString } from 'class-validator';
 import request from 'supertest';
 import { configureApp } from '../src/configure-app';
-import { parseEnvironment } from '../src/config/environment';
+import { ENVIRONMENT, parseEnvironment } from '../src/config/environment';
+import { RateLimiter } from '../src/common/security/rate-limiter';
 class Input {
   @IsString() name!: string;
 }
@@ -22,7 +23,16 @@ class ProbeController {
     throw new Error('private-database-password');
   }
 }
-@Module({ controllers: [ProbeController] })
+@Module({
+  controllers: [ProbeController],
+  providers: [
+    RateLimiter,
+    {
+      provide: ENVIRONMENT,
+      useValue: { API_RATE_LIMIT: 300 },
+    },
+  ],
+})
 class ProbeModule {}
 describe('API foundation contract', () => {
   let app: INestApplication;
@@ -86,6 +96,29 @@ describe('API foundation contract', () => {
     const res = await request(app.getHttpServer()).get('/api/v1/missing').expect(404);
     expect(res.body.error.code).toBe('NOT_FOUND');
     expect(res.body.error.requestId).toBeTruthy();
+  });
+  it('correlates malformed and oversized JSON before parsing can fail', async () => {
+    for (const [body, status] of [
+      ['{"name":', 400],
+      [JSON.stringify({ name: 'x'.repeat(1024 * 1024) }), 413],
+    ] as const) {
+      const response = await request(app.getHttpServer())
+        .post('/api/v1/probe')
+        .set('Content-Type', 'application/json')
+        .set('X-Request-Id', 'body-parser-test')
+        .send(body)
+        .expect(status);
+      expect(response.headers['x-request-id']).toBe('body-parser-test');
+      expect(response.body.error.requestId).toBe('body-parser-test');
+      expect(response.body.error.code).toBe(
+        status === 413 ? 'PAYLOAD_TOO_LARGE' : 'VALIDATION_ERROR',
+      );
+    }
+    const spec = createOpenApi(app);
+    expect(spec.components?.schemas?.ApiError).toHaveProperty(
+      'properties.details.oneOf',
+      expect.arrayContaining([expect.objectContaining({ type: 'array' })]),
+    );
   });
 });
 describe('environment validation', () => {

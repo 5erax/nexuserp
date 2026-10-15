@@ -63,6 +63,7 @@ describe('PostgreSQL baseline', () => {
       .overrideProvider(ENVIRONMENT)
       .useValue(
         parseEnvironment({
+          ...process.env,
           DATABASE_URL: 'postgresql://unused:private-value@127.0.0.1:1/nexuserp_test',
         }),
       )

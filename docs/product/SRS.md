@@ -245,10 +245,7 @@ Minh họa quy tắc tính toán; thao tác đặt trước thực tế phải �
 
 **Sales Order**
 
-> **Sơ đồ chuyển trạng thái gốc không còn** sau khi chuyển định dạng; chỉ còn danh sách trạng thái:
-> `DRAFT`, `CONFIRMED`, `CANCELLED`, `PARTIALLY_FULFILLED`, `FULFILLED`, `CLOSED`, `RETURN_PROCESS`.
-> Bảng chuyển trạng thái đầy đủ (từ → sang, điều kiện, vai trò được phép) được định nghĩa trong
-> issue `P0-DOC-002`; trạng thái giao hàng và thanh toán nên được tách khỏi vòng đời đơn.
+MVP dùng `DRAFT`, `CONFIRMED`, `CANCELLED`, `FULFILLED`. Bảng mọi cặp trạng thái/hành động, side effect, permission và shipment/payment độc lập nằm trong [ORDER_STATE_MACHINE](../business-rules/ORDER_STATE_MACHINE.md). `PARTIALLY_FULFILLED`, `CLOSED`, `RETURN_PROCESS` là thiết kế sau MVP.
 
 Trạng thái CANCELLED từ CONFIRMED chỉ hợp lệ nếu chưa xuất hàng, chưa có thanh toán thực nhận và đã xử lý giữ hàng trong cùng transaction. MVP từ chối hủy đơn đã nhận tiền vì hoàn/đảo thanh toán thuộc Phase 5 ([ADR-0014](../adr/0014-minimal-payment-recording.md)). RETURN_PROCESS là nhánh nghiệp vụ hoàn trả sau MVP, không tự ý hoàn nguyên giao dịch đã posted.
 
@@ -632,7 +629,7 @@ POST `/api/v1/sales/orders`
   "items": [
     {
       "variantId": "uuid-product-variant",
-      "quantity": 3
+      "quantity": "3"
     }
   ],
   "note": "Giao hàng trước 17:00"
@@ -670,8 +667,8 @@ Backend không tin giá tiền do frontend cung cấp; DTO từ chối trường
     "message": "Số lượng tồn khả dụng không đủ",
     "details": {
       "variantId": "uuid-product-variant",
-      "requested": 10,
-      "available": 6
+      "requested": "10",
+      "available": "6"
     },
     "requestId": "req_abc123"
   }

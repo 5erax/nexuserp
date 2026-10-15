@@ -1,0 +1,19 @@
+# User stories và truy vết issue
+
+Mỗi hàng có persona, mong muốn, mục đích và acceptance ở mức nghiệp vụ. Các issue #32–81 đều ánh xạ ít nhất một story; issue tooling/release hỗ trợ người vận hành hoặc người đánh giá. Đây là phạm vi dự kiến, kết quả thực thi theo trạng thái GitHub Issues.
+
+| ID | Story | Acceptance scenario | Rule/contract | Issues |
+| --- | --- | --- | --- | --- |
+| US-IAM-001 | Là nhân viên, tôi muốn đăng nhập/đăng xuất an toàn để chỉ mình truy cập phiên của mình | Given account ACTIVE; When login đúng và CSRF hợp lệ; Then me trả profile an toàn, refresh chỉ một successor và logout thu hồi cả family | IAM-001, IAM-002, IAM-007, ADR-0010 | #32, #33, #34, #35, #42, #43 |
+| US-IAM-002 | Là quản trị, tôi muốn cấp role và chi nhánh để nhân viên chỉ thao tác trong trách nhiệm | Given Sales A; When gọi trực tiếp đơn B hoặc thiếu quyền; Then404/403; không tự nâng quyền, không disable admin cuối cùng | IAM-003, IAM-004, IAM-006 | #36, #37, #38, #39, #40, #44, #45 |
+| US-AUD-001 | Là quản lý, tôi muốn tra lịch sử thao tác để điều tra thay đổi | Given mutation commit; When đọc audit đúng scope; Then thấy actor/action/entity/requestId, không secret; rollback không có audit thành công | IAM-005 | #41, #74 |
+| US-CAT-001 | Là Owner, tôi muốn quản lý sản phẩm/SKU để nhân viên bán đúng hàng và giá | Given SKU duy nhất trong tổ chức; When tạo trùng hoặc sửa SKU có giao dịch; Then từ chối; catalog hiển thị đúng trạng thái | INV-001, INV-010 | #46, #48, #55 |
+| US-INV-001 | Là nhân viên kho, tôi muốn đọc tồn khả dụng và lịch sử để quyết định giao hàng | Given movements/reservations; When truy vấn balance; Then available=onHand-reserved, ledger khớp; API không cho sửa tay onHand | INV-002–005, INV-008 | #49, #50, #52, #53, #54, #56, #57 |
+| US-INV-002 | Là quản lý kho, tôi muốn mở tồn/điều chỉnh có kiểm soát để phản ánh kiểm kê | Given phiếu có lý do; When tổng abs delta>10; Then người khác đúng quyền duyệt trước post, retry không tăng/giảm hai lần | INV-004, INV-005, INV-007 | #47, #51 |
+| US-CRM-001 | Là nhân viên bán hàng, tôi muốn lưu hồ sơ khách để tạo đơn và tra lịch sử giao dịch | Given khách chi nhánh A; When tạo/sửa/tra cứu; Then validate dữ liệu, không lộ khách B | IAM-004, SAL-001 | #58, #59, #69 |
+| US-SAL-001 | Là nhân viên bán hàng, tôi muốn tạo đơn theo giá server để báo đúng tổng tiền | Given SKU ACTIVE; When tạo DRAFT và áp giảm giá; Then snapshot giá/tên, VND HALF_UP, không nhận total/price do client ép | SAL-001–004, SAL-010, FIN-001 | #60, #61, #68 |
+| US-SAL-002 | Là nhân viên bán hàng, tôi muốn xác nhận hoặc hủy hợp lệ để giữ và giải phóng hàng chính xác | Given available cuối cùng; When hai confirm cạnh tranh; Then một thành công; cancel chưa giao/thu tiền release đủ, mọi event trace được | SAL-005–007, INV-002, INV-009 | #62, #64, #66, #67, #70 |
+| US-SAL-003 | Là nhân viên kho, tôi muốn giao đủ đơn đã giữ để số lượng thực tế giảm đúng | Given CONFIRMED và reservation ACTIVE; When shipment post; Then order FULFILLED, movement một lần, reserved và onHand cùng giảm | SAL-008, INV-004, INV-005 | #63 |
+| US-FIN-001 | Là quản lý, tôi muốn ghi nhận khoản thực thu để biết đơn còn thiếu bao nhiêu | Given order CONFIRMED/FULFILLED; When nhận CASH/BANK_TRANSFER; Then không thu vượt tổng, reference không trùng, payment bất biến | FIN-001–003, ADR-0014 | #65 |
+| US-RPT-001 | Là quản lý, tôi muốn xem và xuất KPI theo chi nhánh để đánh giá vận hành | Given đơn giao/thu tiền khác ngày; When xem dashboard/report/export; Then tách doanh thu/thu tiền, lọc scope trước aggregate và chống spreadsheet injection | IAM-004, ADR-0012, ADR-0014 | #71, #72, #73, #75 |
+| US-OPS-001 | Là người đánh giá, tôi muốn demo có dữ liệu và hướng dẫn để tự kiểm chứng dự án | Given môi trường sạch; When cài/triển khai và chạy 7 bước; Then dữ liệu giả nhất quán, E2E pass, có bằng chứng quality/performance và release tái lập | SCOPE, TEST_STRATEGY | #76, #77, #78, #79, #80, #81 |

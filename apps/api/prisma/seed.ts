@@ -1,3 +1,19 @@
 import 'dotenv/config';
-// The foundation seed intentionally creates no business or demo data.
-console.log('Foundation seed: no data required. Demo accounts arrive in P4-OPS-001.');
+import { PrismaService } from '../src/infrastructure/prisma/prisma.service';
+import { parseEnvironment } from '../src/config/environment';
+import { seedIam, seedPermissionCatalog } from '../src/modules/iam/infrastructure/seed-permissions';
+async function main() {
+  const prisma = new PrismaService(parseEnvironment(process.env));
+  try {
+    await prisma.$transaction(seedPermissionCatalog);
+    const organizations = await prisma.organization.findMany({ select: { id: true } });
+    for (const organization of organizations)
+      await prisma.$transaction((tx) => seedIam(tx, organization.id));
+    console.log(
+      `IAM catalog seeded for ${organizations.length} organizations; no accounts created.`,
+    );
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+void main();

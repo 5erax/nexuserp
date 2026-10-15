@@ -8,6 +8,7 @@ import { METHOD_METADATA } from '@nestjs/common/constants';
 import request, { type Response as TestResponse } from 'supertest';
 import { AppModule } from '../src/app.module';
 import { configureApp } from '../src/configure-app';
+import { createOpenApi } from '../src/openapi';
 import { ENVIRONMENT, parseEnvironment, type Environment } from '../src/config/environment';
 import { PrismaService } from '../src/infrastructure/prisma/prisma.service';
 import { AuthService, tokenHash } from '../src/modules/iam/application/auth.service';
@@ -149,6 +150,12 @@ describe('IAM auth security on PostgreSQL', () => {
       .set('Cookie', `nexus_access=${tokens.accessToken}`)
       .expect(200);
     expect(me.body.data.email).toBe(email);
+    const schemas = createOpenApi(app).components!.schemas!;
+    expect(schemas.ProfileRoleData).toHaveProperty('required', ['id', 'code', 'name']);
+    expect(schemas.Profile).toHaveProperty(
+      'properties.roles.items.$ref',
+      '#/components/schemas/ProfileRoleData',
+    );
     expect(me.body.data.grants['iam.users.manage']).toContain('ORG');
     expect(JSON.stringify(me.body)).not.toMatch(/passwordHash|refreshToken|accessToken/);
     expect(login.headers['cache-control']).toBe('no-store');

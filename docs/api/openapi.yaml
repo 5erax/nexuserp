@@ -2060,7 +2060,7 @@ components:
       required:
         - data
         - meta
-    RoleData:
+    ProfileRoleData:
       type: object
       properties:
         id:
@@ -2089,7 +2089,7 @@ components:
         roles:
           type: array
           items:
-            $ref: "#/components/schemas/RoleData"
+            $ref: "#/components/schemas/ProfileRoleData"
         grants:
           type: object
           additionalProperties:
@@ -2289,6 +2289,45 @@ components:
             - ACTIVE
             - INACTIVE
             - LOCKED
+    GrantInput:
+      type: object
+      properties:
+        code:
+          type: string
+        scope:
+          type: string
+          enum:
+            - ORG
+            - BRANCH
+            - OWN
+      required:
+        - code
+        - scope
+    RoleData:
+      type: object
+      properties:
+        id:
+          type: string
+        code:
+          type: string
+        name:
+          type: string
+        isSystem:
+          type: boolean
+        permissions:
+          type: array
+          items:
+            $ref: "#/components/schemas/GrantInput"
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - code
+        - name
+        - isSystem
+        - permissions
+        - createdAt
     RoleListResponse:
       type: object
       properties:
@@ -2328,20 +2367,6 @@ components:
       required:
         - data
         - meta
-    GrantInput:
-      type: object
-      properties:
-        code:
-          type: string
-        scope:
-          type: string
-          enum:
-            - ORG
-            - BRANCH
-            - OWN
-      required:
-        - code
-        - scope
     CreateRoleInput:
       type: object
       properties:

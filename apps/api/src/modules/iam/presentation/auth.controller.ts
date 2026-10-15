@@ -70,7 +70,7 @@ class SessionResponse {
   @ApiProperty({ type: SessionData }) data!: SessionData;
   @ApiProperty({ type: Meta }) meta!: Meta;
 }
-class RoleData {
+class ProfileRoleData {
   @ApiProperty() id!: string;
   @ApiProperty() code!: string;
   @ApiProperty() name!: string;
@@ -81,7 +81,7 @@ class Profile {
   @ApiProperty() email!: string;
   @ApiProperty() displayName!: string;
   @ApiProperty() mustChangePassword!: boolean;
-  @ApiProperty({ type: [RoleData] }) roles!: RoleData[];
+  @ApiProperty({ type: [ProfileRoleData] }) roles!: ProfileRoleData[];
   @ApiProperty({
     type: 'object',
     additionalProperties: {

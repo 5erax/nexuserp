@@ -4,6 +4,7 @@ import { PrismaService } from '../src/infrastructure/prisma/prisma.service';
 import { parseEnvironment } from '../src/config/environment';
 import { PasswordService } from '../src/modules/iam/application/password.service';
 import { cleanupIam } from './fixtures/cleanup-iam';
+import { cleanupInventory } from './fixtures/cleanup-inventory';
 describe('Catalog and Inventory PostgreSQL constraints', () => {
   let prisma: PrismaService;
   const org = randomUUID(),
@@ -126,22 +127,7 @@ describe('Catalog and Inventory PostgreSQL constraints', () => {
   });
   afterAll(async () => {
     if (!prisma) return;
-    await prisma.$transaction(async (tx) => {
-      const [database] = await tx.$queryRaw<{ name: string }[]>`SELECT current_database() AS name`;
-      if (!database?.name.endsWith('_test')) throw new Error('Owned test fixtures only');
-      const where = { organizationId: { in: [org, other] } };
-      await tx.$executeRaw`ALTER TABLE stock_movements DISABLE TRIGGER stock_movements_immutable`;
-      await tx.stockMovement.deleteMany({ where });
-      await tx.$executeRaw`ALTER TABLE stock_movements ENABLE TRIGGER stock_movements_immutable`;
-      await tx.stockReservation.deleteMany({ where });
-      await tx.stockBalance.deleteMany({ where });
-      await tx.stockAdjustmentItem.deleteMany({ where });
-      await tx.stockAdjustment.deleteMany({ where });
-      await tx.warehouse.deleteMany({ where });
-      await tx.productVariant.deleteMany({ where });
-      await tx.product.deleteMany({ where });
-      await tx.documentSequence.deleteMany({ where });
-    });
+    await cleanupInventory(prisma, [org, other]);
     await cleanupIam(prisma, [org, other]);
     await prisma.$disconnect();
   });

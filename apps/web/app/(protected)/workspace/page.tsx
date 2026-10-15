@@ -1,32 +1,10 @@
 'use client';
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
-import { Button } from '@nexus/ui/button';
 import { useSession } from '../../../lib/auth/session';
-import { api, csrfParams, unwrap } from '../../../lib/auth/api';
-import { FormError } from '../../../components/form-error';
+import { SignOutButton } from '../../../components/sign-out-button';
 import messages from '../../../messages/vi.json';
 export default function WorkspacePage() {
   const { data } = useSession();
-  const client = useQueryClient(),
-    router = useRouter();
-  const [error, setError] = useState<unknown>(),
-    [pending, setPending] = useState(false);
-  async function logout() {
-    setPending(true);
-    setError(undefined);
-    try {
-      unwrap(await api.POST('/api/v1/auth/logout', { params: await csrfParams() }));
-      client.clear();
-      router.replace('/login');
-    } catch (error) {
-      setError(error);
-    } finally {
-      setPending(false);
-    }
-  }
   if (!data) return null;
   return (
     <>
@@ -46,10 +24,7 @@ export default function WorkspacePage() {
         </dl>
         <Link href="/change-password">{messages.auth.changePassword}</Link>
       </section>
-      <FormError error={error} />
-      <Button onClick={() => void logout()} disabled={pending}>
-        {pending ? messages.auth.pending : messages.auth.logout}
-      </Button>
+      <SignOutButton />
     </>
   );
 }

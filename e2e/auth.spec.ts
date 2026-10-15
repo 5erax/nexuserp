@@ -19,6 +19,14 @@ test('real login, required password change, shared-tab refresh and logout', asyn
   await page.getByLabel('Mật khẩu', { exact: true }).fill(password);
   await page.getByRole('button', { name: 'Đăng nhập', exact: true }).click();
   await expect(page).toHaveURL(/\/change-password$/);
+  await expect(page.getByRole('button', { name: 'Đăng xuất', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Đăng xuất', exact: true }).click();
+  await expect(page).toHaveURL(/\/login$/);
+  await page.getByLabel('Mã tổ chức').fill(code);
+  await page.getByLabel('Email', { exact: true }).fill(email);
+  await page.getByLabel('Mật khẩu', { exact: true }).fill(password);
+  await page.getByRole('button', { name: 'Đăng nhập', exact: true }).click();
+  await expect(page).toHaveURL(/\/change-password$/);
   await page.getByLabel('Mật khẩu hiện tại', { exact: true }).fill(password);
   await page.getByLabel('Mật khẩu mới', { exact: true }).fill(password + '-changed');
   await page.getByLabel('Nhập lại mật khẩu mới', { exact: true }).fill(password + '-changed');
@@ -30,6 +38,8 @@ test('real login, required password change, shared-tab refresh and logout', asyn
   await page.getByRole('button', { name: 'Đăng nhập', exact: true }).click();
   await expect(page).toHaveURL(/\/workspace$/);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Business Owner');
+  await page.goto('/login');
+  await expect(page).toHaveURL(/\/workspace$/);
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
   await context.clearCookies({ name: 'nexus_access' });
   const second = await context.newPage();
@@ -45,6 +55,13 @@ test('real login, required password change, shared-tab refresh and logout', asyn
   await expect(page).toHaveURL(/\/login$/);
   await second.reload();
   await expect(second).toHaveURL(/\/login\?returnTo=/);
+  await page.goto('/change-password');
+  await expect(page).toHaveURL(/\/login\?returnTo=/);
+  await page.getByLabel('Mã tổ chức').fill(code);
+  await page.getByLabel('Email', { exact: true }).fill(email);
+  await page.getByLabel('Mật khẩu', { exact: true }).fill(password + '-changed');
+  await page.getByRole('button', { name: 'Đăng nhập', exact: true }).click();
+  await expect(page).toHaveURL(/\/change-password$/);
 });
 test('login form works at 390px and reports rate limits without losing fields', async ({
   page,

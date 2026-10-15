@@ -4,6 +4,10 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { LoginForm } from '../app/login/login-form';
 const state = vi.hoisted(() => ({ post: vi.fn(), get: vi.fn(), replace: vi.fn() }));
+vi.mock('../lib/auth/session', () => ({
+  sessionKey: ['session'],
+  useSession: () => ({ data: undefined, error: null, isPending: false }),
+}));
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ replace: state.replace }),
   useSearchParams: () => new URLSearchParams('returnTo=%2Fworkspace'),
@@ -15,6 +19,10 @@ vi.mock('../lib/auth/api', async (importActual) => ({
 }));
 beforeEach(() => {
   vi.clearAllMocks();
+  state.get.mockResolvedValue({
+    response: new Response(null, { status: 200 }),
+    data: { data: { csrfToken: 'signed-test' } },
+  });
 });
 function form() {
   render(

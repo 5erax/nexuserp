@@ -1,7 +1,9 @@
+'use client';
 import { createApiClient } from '@nexus/contracts';
 import messages from '../../messages/vi.json';
 
 let recovery: Promise<Response> | undefined;
+let sessionQueue: Promise<unknown> = Promise.resolve();
 function csrfCookie() {
   return document.cookie
     .split(';')
@@ -29,36 +31,55 @@ async function send(original: Request) {
     signal: AbortSignal.any([request.signal, AbortSignal.timeout(10000)]),
   });
 }
-export async function sessionFetch(request: Request): Promise<Response> {
-  const response = await send(request);
-  const path = new URL(request.url).pathname;
-  if (
-    response.status !== 401 ||
-    ['/api/v1/auth/login', '/api/v1/auth/refresh', '/api/v1/auth/logout'].includes(path)
-  )
-    return response;
-  if (recovery) {
-    const outcome = await recovery;
+async function sessionLock(action: () => Promise<Response>) {
+  const pending = sessionQueue.then(async () => {
+    if (navigator.locks) return await navigator.locks.request('nexuserp-session', action);
+    return action();
+  });
+  sessionQueue = pending.catch(() => undefined);
+  return pending;
+}
+async function expired(response: Response) {
+  if (response.status !== 401) return false;
+  const body = await response
+    .clone()
+    .json()
+    .catch(() => null);
+  return body?.error?.code === 'SESSION_INVALID' || body?.error?.code === 'UNAUTHORIZED';
+}
+async function recover(request: Request) {
+  const result = await send(request);
+  if (!(await expired(result))) return result;
+  const refreshed = await send(
+    new Request(new URL('/api/v1/auth/refresh', request.url), { method: 'POST' }),
+  );
+  if (refreshed.status === 409) {
+    await new Promise((resolve) => setTimeout(resolve, 150));
     const retry = await send(request);
-    return retry.status === 401 && outcome.status === 409 ? outcome.clone() : retry;
+    return (await expired(retry)) ? refreshed : retry;
   }
-  const recover = async () => {
-    const result = await send(request);
-    if (result.status !== 401) return result;
-    const refreshed = await send(
-      new Request(new URL('/api/v1/auth/refresh', request.url), { method: 'POST' }),
-    );
-    if (refreshed.status === 409) {
-      await new Promise((resolve) => setTimeout(resolve, 150));
-      const retry = await send(request);
-      return retry.status === 401 ? refreshed : retry;
-    }
-    return refreshed.ok ? send(request) : refreshed;
-  };
-  recovery = (async () => {
-    if (navigator.locks) return await navigator.locks.request('nexuserp-session', recover);
-    return recover();
-  })().finally(() => {
+  return refreshed.ok ? send(request) : refreshed;
+}
+export async function sessionFetch(request: Request): Promise<Response> {
+  const path = new URL(request.url).pathname;
+  if (['/api/v1/auth/logout', '/api/v1/auth/password', '/api/v1/auth/login'].includes(path)) {
+    // Wait even after failed recovery so no late response can restore cleared cookies.
+    await recovery?.catch(() => undefined);
+    return sessionLock(async () => {
+      const result = await send(request);
+      return path === '/api/v1/auth/password' && (await expired(result))
+        ? recover(request)
+        : result;
+    });
+  }
+  const response = await send(request);
+  if (path === '/api/v1/auth/refresh' || !(await expired(response))) return response;
+  if (recovery) {
+    const outcome = await recovery,
+      retry = await send(request);
+    return (await expired(retry)) && outcome.status === 409 ? outcome.clone() : retry;
+  }
+  recovery = sessionLock(() => recover(request)).finally(() => {
     recovery = undefined;
   });
   return (await recovery).clone();
@@ -107,11 +128,7 @@ export function safeReturnPath(value: string | null) {
     return '/workspace';
   try {
     const url = new URL(value, 'https://local.invalid');
-    if (
-      url.origin !== 'https://local.invalid' ||
-      ['/login', '/change-password'].includes(url.pathname)
-    )
-      return '/workspace';
+    if (url.origin !== 'https://local.invalid' || url.pathname === '/login') return '/workspace';
     return url.pathname + url.search + url.hash;
   } catch {
     return '/workspace';

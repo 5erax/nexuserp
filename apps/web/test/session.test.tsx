@@ -10,9 +10,56 @@ afterEach(() => {
   vi.unstubAllGlobals();
   document.cookie = 'nexus_csrf=; Max-Age=0; Path=/';
 });
-const response = (status: number, data: unknown = {}) =>
+const response = (
+  status: number,
+  data: unknown = status === 401 ? { error: { code: 'SESSION_INVALID' } } : {},
+) =>
   new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
 const req = (path = '/users') => new Request('http://localhost/api/v1' + path);
+it('does not refresh or repeat a password change rejected for invalid current credentials', async () => {
+  const fetcher = vi.fn(async () => response(401, { error: { code: 'INVALID_CREDENTIALS' } }));
+  vi.stubGlobal('fetch', fetcher);
+  expect((await sessionFetch(new Request(req('/auth/password'), { method: 'POST' }))).status).toBe(
+    401,
+  );
+  expect(fetcher).toHaveBeenCalledOnce();
+});
+it('waits for in-flight recovery before logout clears the session', async () => {
+  vi.stubGlobal('navigator', {});
+  const events: string[] = [];
+  let active = false,
+    finish!: () => void,
+    started!: () => void;
+  const waiting = new Promise<void>((resolve) => {
+    started = resolve;
+  });
+  const fetcher = vi.fn(async (input: Request) => {
+    if (input.url.endsWith('/auth/refresh')) {
+      started();
+      await new Promise<void>((resolve) => {
+        finish = resolve;
+      });
+      active = true;
+      events.push('refresh-response');
+      return response(200);
+    }
+    if (input.url.endsWith('/auth/logout')) {
+      events.push('logout');
+      active = false;
+      return response(200);
+    }
+    return response(active ? 200 : 401);
+  });
+  vi.stubGlobal('fetch', fetcher);
+  const pending = sessionFetch(req());
+  await waiting;
+  const logout = sessionFetch(new Request(req('/auth/logout'), { method: 'POST' }));
+  await Promise.resolve();
+  expect(events).toEqual([]);
+  finish();
+  await Promise.all([pending, logout]);
+  expect(events).toEqual(['refresh-response', 'logout']);
+});
 it('sends current CSRF and never refreshes an incorrect login', async () => {
   const fetcher = vi.fn(async (input: Request) => {
     expect(input.headers.get('X-CSRF-Token')).toBe('signed-test');
@@ -33,7 +80,10 @@ it('single-flights concurrent 401s, retries under Web Lock and returns each orig
       active = true;
       return response(200);
     }
-    return response(active ? 200 : 401, { path: new URL(input.url).pathname });
+    return response(active ? 200 : 401, {
+      path: new URL(input.url).pathname,
+      ...(!active ? { error: { code: 'SESSION_INVALID' } } : {}),
+    });
   });
   vi.stubGlobal('fetch', fetcher);
   const [users, branches] = await Promise.all([
@@ -97,14 +147,8 @@ it('bootstraps missing CSRF and propagates 429 without sending the mutation', as
   expect(fetcher.mock.calls[0]?.[0]).toBe('/api/v1/auth/csrf');
 });
 it('only accepts internal return destinations', () => {
-  for (const value of [
-    null,
-    'https://evil.test',
-    '//evil.test',
-    '/\\evil.test',
-    '/login',
-    '/change-password',
-  ])
+  for (const value of [null, 'https://evil.test', '//evil.test', '/\\evil.test', '/login'])
     expect(safeReturnPath(value)).toBe('/workspace');
   expect(safeReturnPath('/admin/users?page=2')).toBe('/admin/users?page=2');
+  expect(safeReturnPath('/change-password')).toBe('/change-password');
 });

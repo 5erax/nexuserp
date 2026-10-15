@@ -6,6 +6,7 @@ import { Input } from '@nexus/ui/components/input';
 import { Button } from '@nexus/ui/button';
 import { api, csrfParams, ApiFailure, unwrap } from '../../../lib/auth/api';
 import { FormError } from '../../../components/form-error';
+import { SignOutButton } from '../../../components/sign-out-button';
 import messages from '../../../messages/vi.json';
 export default function ChangePasswordPage() {
   const [error, setError] = useState<unknown>(),
@@ -84,6 +85,7 @@ export default function ChangePasswordPage() {
           {pending ? messages.auth.pending : messages.auth.changePassword}
         </Button>
       </form>
+      <SignOutButton disabled={pending} />
     </div>
   );
 }

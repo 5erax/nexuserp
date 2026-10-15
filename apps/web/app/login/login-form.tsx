@@ -1,11 +1,11 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { Input } from '@nexus/ui/components/input';
 import { Button } from '@nexus/ui/button';
 import { api, csrfParams, safeReturnPath, unwrap } from '../../lib/auth/api';
-import { sessionKey } from '../../lib/auth/session';
+import { sessionKey, useSession } from '../../lib/auth/session';
 import { FormError } from '../../components/form-error';
 import messages from '../../messages/vi.json';
 export function LoginForm() {
@@ -14,12 +14,22 @@ export function LoginForm() {
   const router = useRouter(),
     search = useSearchParams(),
     client = useQueryClient();
+  const session = useSession();
+  useEffect(() => {
+    if (session.data && !session.error)
+      router.replace(
+        session.data.mustChangePassword
+          ? '/change-password'
+          : safeReturnPath(search.get('returnTo')),
+      );
+  }, [session.data, session.error, router, search]);
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(undefined);
     setPending(true);
     const form = new FormData(event.currentTarget);
     try {
+      unwrap(await api.GET('/api/v1/auth/csrf'));
       unwrap(
         await api.POST('/api/v1/auth/login', {
           params: await csrfParams(),
@@ -82,7 +92,7 @@ export function LoginForm() {
           required
         />
       </label>
-      <Button disabled={pending} type="submit">
+      <Button disabled={pending || session.isPending} type="submit">
         {pending ? messages.auth.pending : messages.auth.login}
       </Button>
     </form>

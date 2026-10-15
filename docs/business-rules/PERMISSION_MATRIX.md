@@ -34,8 +34,8 @@ Prefix chung `/api/v1`. `manage` là quyền CRUD quản trị được nêu t�
 | iam.branches.manage | POST /branches, PATCH /branches/:id | ORG | 1 |
 | iam.organization.read | GET /organization | ORG | 1 |
 | iam.organization.update | PATCH /organization | ORG | 1 |
-| catalog.products.read | GET /products, /products/:id | ORG | 2 |
-| catalog.products.manage | POST /products, PATCH /products/:id; POST/PATCH variants | ORG | 2 |
+| catalog.products.read | GET /products, /products/:id, /product-variants | ORG | 2 |
+| catalog.products.manage | POST /products, PATCH /products/:id; POST /products/:id/variants, PATCH /product-variants/:id | ORG | 2 |
 | inventory.warehouses.read | GET /warehouses, /warehouses/:id | ORG, BRANCH | 2 |
 | inventory.warehouses.manage | POST /warehouses, PATCH /warehouses/:id; set default | ORG | 2 |
 | inventory.balances.read | GET /inventory/balances | ORG, BRANCH | 2 |

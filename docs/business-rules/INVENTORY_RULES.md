@@ -4,7 +4,7 @@ Nguồn [SRS](../product/SRS.md), các ADR đã Accepted và [ma trận quyền]
 
 | ID | Phát biểu | Phase | Nơi thực thi | Test tham chiếu | Trạng thái |
 | --- | --- | --- | --- | --- | --- |
-| INV-001 | SKU phải duy nhất trong một tổ chức | 2 | unique(organization_id,sku), CHECK uppercase/trim | apps/api/test/inventory-schema.integration-spec.ts; planned:#48 cho API | Schema đã kiểm chứng |
+| INV-001 | SKU phải duy nhất trong một tổ chức | 2 | unique(organization_id,sku), normalize DTO, CHECK uppercase/trim | apps/api/test/inventory-schema.integration-spec.ts; apps/api/test/catalog.integration-spec.ts | Schema/API, gồm tranh chấp SKU, đã kiểm chứng |
 | INV-002 | Không cho phép xuất hàng vượt tồn khả dụng | 2 | atomic guarded balance update + CHECK | planned:#50, planned:#54 | Chưa triển khai |
 | INV-003 | `available = on_hand - reserved` | 2 | available derived, CHECK reserved<=on_hand | apps/api/test/inventory-schema.integration-spec.ts; planned:#50, planned:#53 | CHECK/Decimal đã kiểm chứng; service/API còn lại |
 | INV-004 | Mọi biến động tồn kho phải có stock movement | 2 | movement append cùng transaction balance | planned:#50, planned:#51, planned:#53 | Chưa triển khai |
@@ -13,6 +13,6 @@ Nguồn [SRS](../product/SRS.md), các ADR đã Accepted và [ma trận quyền]
 | INV-007 | Điều chỉnh tồn kho yêu cầu lý do; vượt ngưỡng phải được phê duyệt | 2 | CHECK reason/actor/timestamp; policy tổng abs delta>10 ở application | apps/api/test/inventory-schema.integration-spec.ts; planned:#51 | Constraint đã kiểm chứng; approval policy còn lại |
 | INV-008 | Không cho phép sửa trực tiếp `on_hand` từ CRUD API | 2 | DTO không nhận onHand; chỉ command ledger | planned:#49, planned:#50 | Chưa triển khai |
 | INV-009 | Reservation phải được giải phóng khi hủy đơn hoặc hết hạn hợp lệ | 3 | release/cancel trong transaction order, expiry sau MVP | planned:#52, planned:#64 | Chưa triển khai |
-| INV-010 | Không được sửa SKU của sản phẩm đã có giao dịch nếu làm sai lịch sử | 2 | Trigger cấm đổi SKU đã có stock movement; FK RESTRICT | apps/api/test/inventory-schema.integration-spec.ts; planned:#48 cho API, planned:#58 cho Sales | Bảo vệ stock history đã kiểm chứng |
+| INV-010 | Không được sửa SKU của sản phẩm đã có giao dịch nếu làm sai lịch sử | 2 | Catalog lock/check + trigger cấm đổi SKU đã có stock movement; FK RESTRICT | apps/api/test/inventory-schema.integration-spec.ts; apps/api/test/catalog.integration-spec.ts; planned:#58 cho Sales | API/DB bảo vệ stock history đã kiểm chứng; lịch sử đơn theo Phase 3 |
 
 Quy tắc bổ sung: Inventory sở hữu warehouse, default warehouse duy nhất trong branch; unit_cost nullable nonnegative ở OPENING/ADJUSTMENT_IN (NULL khác 0). Post shipment giảm cả on_hand/reserved và tiêu thụ reservation. document_sequences do platform sở hữu để cấp số chứng từ trong transaction; UNIQUE là lớp bảo vệ cuối. Reconciliation so sánh sum movements với on_hand và sum ACTIVE reservations với reserved, không tự sửa ledger (#53).

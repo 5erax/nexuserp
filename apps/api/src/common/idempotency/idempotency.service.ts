@@ -97,12 +97,16 @@ export class IdempotencyService {
   }
 }
 
-export function pruneExpiredKeys(prisma: PrismaService, limit = 100) {
+export function pruneExpiredKeys(
+  prisma: Pick<Prisma.TransactionClient, '$executeRaw'>,
+  limit = 100,
+) {
   if (!Number.isInteger(limit) || limit < 1 || limit > 1000)
     throw new Error('Batch limit must be 1–1000');
   return prisma.$executeRaw`
-    DELETE FROM idempotency_keys WHERE id IN (
+    WITH expired AS MATERIALIZED (
       SELECT id FROM idempotency_keys WHERE expires_at <= clock_timestamp()
       ORDER BY expires_at, id LIMIT ${limit} FOR UPDATE SKIP LOCKED
-    )`;
+    )
+    DELETE FROM idempotency_keys USING expired WHERE idempotency_keys.id = expired.id`;
 }

@@ -1981,6 +1981,707 @@ paths:
         - cookie: []
       tags:
         - audit
+  /api/v1/products:
+    get:
+      operationId: CatalogController_list
+      parameters:
+        - name: page
+          required: false
+          in: query
+          schema:
+            minimum: 1
+            maximum: 1000000
+            default: 1
+            type: integer
+        - name: pageSize
+          required: false
+          in: query
+          schema:
+            minimum: 1
+            maximum: 100
+            default: 20
+            type: integer
+        - name: q
+          required: false
+          in: query
+          schema:
+            type: string
+        - name: sortOrder
+          required: false
+          in: query
+          schema:
+            default: desc
+            type: string
+            enum:
+              - asc
+              - desc
+        - name: status
+          required: false
+          in: query
+          schema:
+            type: string
+            enum:
+              - ACTIVE
+              - INACTIVE
+        - name: category
+          required: false
+          in: query
+          schema:
+            maxLength: 100
+            type: string
+        - name: sortBy
+          required: false
+          in: query
+          schema:
+            default: createdAt
+            type: string
+            enum:
+              - createdAt
+              - name
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductListResponse"
+        "400":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "401":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "409":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "413":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "429":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "500":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "503":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+      security: &a9
+        - cookie: []
+      tags: &a10
+        - catalog
+    post:
+      operationId: CatalogController_create
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: header
+          name: X-CSRF-Token
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProductInput"
+      responses:
+        "201":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductResponse"
+        "400":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "401":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "409":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "413":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "429":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "500":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "503":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+      security: *a9
+      tags: *a10
+  /api/v1/products/{id}:
+    get:
+      operationId: CatalogController_detail
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductResponse"
+        "400":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "401":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "409":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "413":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "429":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "500":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "503":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+      security: *a9
+      tags: *a10
+    patch:
+      operationId: CatalogController_update
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+        - in: header
+          name: X-CSRF-Token
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProductInput"
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductResponse"
+        "400":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "401":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "409":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "413":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "429":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "500":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "503":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+      security: *a9
+      tags: *a10
+  /api/v1/product-variants:
+    get:
+      operationId: CatalogController_variants
+      parameters:
+        - name: page
+          required: false
+          in: query
+          schema:
+            minimum: 1
+            maximum: 1000000
+            default: 1
+            type: integer
+        - name: pageSize
+          required: false
+          in: query
+          schema:
+            minimum: 1
+            maximum: 100
+            default: 20
+            type: integer
+        - name: q
+          required: false
+          in: query
+          schema:
+            type: string
+        - name: sortOrder
+          required: false
+          in: query
+          schema:
+            default: desc
+            type: string
+            enum:
+              - asc
+              - desc
+        - name: status
+          required: false
+          in: query
+          schema:
+            type: string
+            enum:
+              - ACTIVE
+              - INACTIVE
+        - name: category
+          required: false
+          in: query
+          schema:
+            maxLength: 100
+            type: string
+        - name: productId
+          required: false
+          in: query
+          schema:
+            format: uuid
+            type: string
+        - name: sortBy
+          required: false
+          in: query
+          schema:
+            default: createdAt
+            type: string
+            enum:
+              - createdAt
+              - name
+              - sku
+              - sellingPrice
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VariantListResponse"
+        "400":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "401":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "409":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "413":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "429":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "500":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "503":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+      security: *a9
+      tags: *a10
+  /api/v1/products/{id}/variants:
+    post:
+      operationId: CatalogController_createVariant
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: header
+          name: X-CSRF-Token
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateVariantInput"
+      responses:
+        "201":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VariantResponse"
+        "400":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "401":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "409":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "413":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "429":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "500":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "503":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+      security: *a9
+      tags: *a10
+  /api/v1/product-variants/{id}:
+    patch:
+      operationId: CatalogController_updateVariant
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+        - in: header
+          name: X-CSRF-Token
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateVariantInput"
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VariantResponse"
+        "400":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "401":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "409":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "413":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "429":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "500":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "503":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+      security: *a9
+      tags: *a10
 info:
   title: NexusERP API
   description: NexusERP API. Cookie sessions; unsafe requests require the exact
@@ -2629,3 +3330,220 @@ components:
       required:
         - data
         - meta
+    ProductData:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        category:
+          type: string
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum:
+            - ACTIVE
+            - INACTIVE
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - category
+        - description
+        - status
+        - createdAt
+        - updatedAt
+    ProductListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProductData"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+      required:
+        - data
+        - meta
+    CatalogMeta:
+      type: object
+      properties:
+        requestId:
+          type: string
+      required:
+        - requestId
+    ProductResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/ProductData"
+        meta:
+          $ref: "#/components/schemas/CatalogMeta"
+      required:
+        - data
+        - meta
+    CreateProductInput:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 200
+        category:
+          type: string
+          nullable: true
+          maxLength: 100
+        description:
+          type: string
+          nullable: true
+          maxLength: 2000
+        status:
+          type: string
+          enum: &a11
+            - ACTIVE
+            - INACTIVE
+      required:
+        - name
+    UpdateProductInput:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 200
+        category:
+          type: string
+          nullable: true
+          maxLength: 100
+        description:
+          type: string
+          nullable: true
+          maxLength: 2000
+        status:
+          type: string
+          enum: *a11
+    VariantData:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        productId:
+          type: string
+          format: uuid
+        productName:
+          type: string
+        productStatus:
+          type: string
+          enum:
+            - ACTIVE
+            - INACTIVE
+        sku:
+          type: string
+        name:
+          type: string
+        sellingPrice:
+          type: string
+          pattern: ^(0|[1-9]\d{0,19})$
+        lowStockThreshold:
+          type: string
+          pattern: ^(0|[1-9]\d{0,14})(\.\d{1,3})?$
+        status:
+          type: string
+          enum:
+            - ACTIVE
+            - INACTIVE
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - productId
+        - productName
+        - productStatus
+        - sku
+        - name
+        - sellingPrice
+        - lowStockThreshold
+        - status
+        - createdAt
+        - updatedAt
+    VariantListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/VariantData"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+      required:
+        - data
+        - meta
+    CreateVariantInput:
+      type: object
+      properties:
+        sku:
+          type: string
+          maxLength: 64
+        name:
+          type: string
+          maxLength: 200
+        sellingPrice:
+          type: string
+          pattern: ^(0|[1-9]\d{0,19})$
+          example: "450000"
+        lowStockThreshold:
+          type: string
+          pattern: ^(0|[1-9]\d{0,14})(\.\d{1,3})?$
+          example: "10.125"
+        status:
+          type: string
+          enum: &a12
+            - ACTIVE
+            - INACTIVE
+      required:
+        - sku
+        - name
+        - sellingPrice
+    VariantResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/VariantData"
+        meta:
+          $ref: "#/components/schemas/CatalogMeta"
+      required:
+        - data
+        - meta
+    UpdateVariantInput:
+      type: object
+      properties:
+        sku:
+          type: string
+          maxLength: 64
+        name:
+          type: string
+          maxLength: 200
+        sellingPrice:
+          type: string
+          pattern: ^(0|[1-9]\d{0,19})$
+          example: "450000"
+        lowStockThreshold:
+          type: string
+          pattern: ^(0|[1-9]\d{0,14})(\.\d{1,3})?$
+          example: "10.125"
+        status:
+          type: string
+          enum: *a12

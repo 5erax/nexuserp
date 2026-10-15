@@ -89,7 +89,7 @@ Receipt bất biến sau commit, không status do client sửa. Khóa order rồ
 
 | Bảng / phase / owner | Cột và constraint | Index/xóa |
 | --- | --- | --- |
-| idempotency_keys / 2 / platform | id UUID PK; organization_id,actor_id UUID; command varchar(200) gồm method/route/resource; key UUID; request_hash char(64); response jsonb; response_status int; created_at,expires_at timestamptz(3); CHECK expiry>created; response không chứa secret | unique(org,actor,command,key); index(expires_at); org/actor FK RESTRICT; xóa expired theo batch |
+| idempotency_keys / 2 / platform | id UUID PK; organization_id,actor_id UUID; command varchar(512) gồm method/route/resource; key UUID; request_hash char(64) lowercase hex; status IN_PROGRESS/COMPLETED; response jsonb; response_status 200/201 khi COMPLETED; created_at,expires_at timestamptz(3); CHECK expiry>created và state/response khớp; response không chứa secret | unique(org,actor,command,key); index(expires_at); org/actor FK ghép RESTRICT; TTL24h, xóa expired theo batch; migration 20261016010000_idempotency |
 | document_sequences / 2–3 / platform | organization_id UUID; kind varchar(16) SO/ADJ/SHIP; year int; next_value bigint CHECK>0 | PK(org,kind,year); org FK RESTRICT; transaction UPSERT increment, không count+1, không tái dùng số đã phát hành |
 | outbox_events / 3 / platform | id UUID PK; organization_id UUID; event_type varchar(100); aggregate_id UUID; payload jsonb allowlist; attempts int default0 CHECK>=0; available_at/created_at timestamptz(3); published_at nullable; last_error varchar(200) nullable đã sanitize | index(available_at,id) WHERE published_at IS NULL; org FK RESTRICT; dispatcher SKIP LOCKED, retry bounded, event ID ổn định |
 

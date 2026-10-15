@@ -28,11 +28,18 @@ Mọi POST thay đổi nghiệp vụ catalog/inventory/CRM/Sales/Finance yêu c�
 
 Khóa idempotency và thay đổi dữ liệu commit cùng transaction, không tạo command đã thành công nhưng thiếu response đã lưu. Timeout/rollback cho phép thử lại. Unique document/movement/reference vẫn bảo vệ sau TTL; key hết hạn không tự làm lại transition terminal. Không lưu cookie, token hoặc mật khẩu trong response cache. Dọn key theo expiry trong batch có giới hạn.
 
+Framework đã có trong `common/idempotency`; các endpoint nghiệp vụ dùng ở task tiếp theo. `@Idempotent()` kiểm tra header UUID và khai báo OpenAPI, chạy sau guard và trước envelope. Controller chỉ trả `IdempotentCommand` do application service tạo, không thực hiện side effect trước đó. Command giữ DTO đã validate, callback authorize chỉ đọc để kiểm tra scope hiện tại và callback run ghi dữ liệu bằng transaction được truyền vào. Không mở transaction riêng hoặc gọi dịch vụ bên ngoài trong run. Cả lần đầu và replay đều chạy authorize trước khi đọc response cache.
+
+Advisory transaction lock PostgreSQL theo organization/actor/method/route/resource/key trả conflict ngay khi đang tranh chấp; không dùng bộ nhớ trong process để chống trùng. IN_PROGRESS, dữ liệu nghiệp vụ và COMPLETED commit cùng transaction; rollback không để lại khóa. Response thành công chỉ lưu JSON data và status 200/201, tối đa 1 MiB; trường có tên chứa password/token/secret/authorization/cookie làm transaction thất bại thay vì lưu secret. Header `Idempotency-Replayed: true` đánh dấu replay, `false` ở lần thực thi đầu. Envelope cấp requestId mới, không cache header/cookie. UUID header được normalize chữ thường; version command và canonical DTO nằm trong request hash, mảng giữ thứ tự.
+
+Thiếu/sai UUID trả 400 IDEMPOTENCY_KEY_REQUIRED trước khi claim key. Dọn expired key bằng `pnpm --filter @nexus/api idempotency:prune`, mỗi lần tối đa 100 dòng với SKIP LOCKED; không xóa khóa còn hạn. Test PostgreSQL/HTTP tại `apps/api/test/idempotency.integration-spec.ts` kiểm chứng replay, mười request đồng thời, rollback, quyền/CSRF/scope, TTL và cleanup cạnh tranh retry.
+
 ## Mã lỗi
 
 | HTTP | Code | Ý nghĩa/hành vi client |
 | --- | --- | --- |
 | 400 | VALIDATION_ERROR | Sửa input/UUID/query/header |
+| 400 | IDEMPOTENCY_KEY_REQUIRED | Thiếu hoặc sai UUID ở command bắt buộc header |
 | 401 | UNAUTHORIZED, SESSION_INVALID | Chưa có phiên hoặc phiên hết hạn/thu hồi |
 | 401 | INVALID_CREDENTIALS | Login chung cho email/organization/password/status sai |
 | 401 | REFRESH_REUSE_DETECTED | Family đã thu hồi và commit trước response |

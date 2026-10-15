@@ -15,6 +15,7 @@ Chỉ mục tài liệu của dự án. Nguồn sự thật về tiến độ l�
 | [database/RESERVATION_MIGRATION_PLAN.md](database/RESERVATION_MIGRATION_PLAN.md) | Tách migration Inventory Phase 2 khỏi FK Sales Phase 3 |
 | [development/SETUP.md](development/SETUP.md) | Cài dependency, Docker/local, chạy test và build |
 | [development/CATALOG.md](development/CATALOG.md) | API sản phẩm/SKU, trạng thái lưu trữ và kiểm thử Phase 2 |
+| [development/INVENTORY.md](development/INVENTORY.md) | Ledger nguyên tử, quyền sở hữu số dư và kiểm thử đồng thời |
 | [development/CONFIGURATION.md](development/CONFIGURATION.md) | Biến môi trường và phạm vi secret |
 | [development/DEPENDENCIES.md](development/DEPENDENCIES.md) | Override bảo mật và advisory tooling còn theo dõi |
 | [architecture/SYSTEM_ARCHITECTURE.md](architecture/SYSTEM_ARCHITECTURE.md) | Luồng web → API → PostgreSQL đang triển khai |

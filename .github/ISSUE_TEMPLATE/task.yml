@@ -1,0 +1,56 @@
+name: Công việc (task / feature)
+description: Một đơn vị công việc có acceptance criteria và test cases.
+title: "P?-AREA-000 Tiêu đề ngắn"
+labels: ["type:feature"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Đặt tên theo quy ước `P<phase>-<AREA>-<số>` (xem CONTRIBUTING.md). Đừng bắt đầu code khi chưa có acceptance criteria.
+  - type: textarea
+    id: goal
+    attributes:
+      label: Mục tiêu
+      description: Kết quả cần đạt và vì sao nó quan trọng.
+    validations:
+      required: true
+  - type: textarea
+    id: rules
+    attributes:
+      label: Bối cảnh và business rules liên quan
+      description: ID quy tắc trong SRS (ví dụ INV-002, SAL-007), ADR liên quan.
+  - type: textarea
+    id: scope
+    attributes:
+      label: Phạm vi công việc
+      description: Danh sách việc cần làm (checklist) và những gì nằm ngoài phạm vi.
+      value: |
+        - [ ]
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Điều kiện nghiệm thu quan sát được, nên theo dạng Given / When / Then.
+      value: |
+        - [ ]
+    validations:
+      required: true
+  - type: textarea
+    id: tests
+    attributes:
+      label: Test cases
+      description: Unit, integration, E2E, concurrency, security cần có.
+    validations:
+      required: true
+  - type: textarea
+    id: files
+    attributes:
+      label: File / đường dẫn dự kiến bị ảnh hưởng
+      render: text
+  - type: textarea
+    id: deps
+    attributes:
+      label: Dependencies
+      description: Issue hoặc ADR phải xong trước (ví dụ P1-AUTH-001).

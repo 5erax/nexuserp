@@ -1,0 +1,15 @@
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.pdf binary
+
+# Generated files: collapse in diffs and exclude from language stats
+pnpm-lock.yaml -diff linguist-generated
+package-lock.json -diff linguist-generated
+docs/api/openapi.yaml linguist-generated=false

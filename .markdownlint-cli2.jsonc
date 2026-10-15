@@ -1,0 +1,16 @@
+{
+  // Cấu hình lint cho tài liệu. Nới các quy tắc gây nhiễu với tài liệu tiếng Việt và bảng dữ liệu.
+  "config": {
+    "default": true,
+    "MD013": false, // độ dài dòng
+    "MD024": { "siblings_only": true }, // tiêu đề trùng (cho phép nếu khác cấp cha)
+    "MD026": false, // dấu câu cuối tiêu đề
+    "MD033": false, // HTML nội tuyến (<br/> trong mermaid, <!-- --> trong template)
+    "MD034": false, // URL trần
+    "MD036": false, // nhấn mạnh dùng như tiêu đề
+    "MD040": false, // ngôn ngữ cho code fence
+    "MD041": false, // dòng đầu phải là H1 (PR template)
+    "MD060": false // định dạng cột của bảng
+  },
+  "ignores": ["node_modules/**"]
+}

@@ -1,0 +1,58 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+.yarn/*
+!.yarn/patches
+!.yarn/releases
+!.yarn/plugins
+
+# Build output
+dist/
+build/
+.next/
+out/
+.turbo/
+*.tsbuildinfo
+
+# Environment & secrets (only *.example files are committed)
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.pem
+*.key
+
+# Testing & coverage
+coverage/
+.nyc_output/
+playwright-report/
+test-results/
+blob-report/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Database & local infrastructure data
+*.sqlite
+*.db
+infrastructure/docker/data/
+infrastructure/docker/volumes/
+pgdata/
+
+# Prisma
+prisma/*.db
+
+# Editors & OS
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.DS_Store
+Thumbs.db
+
+# Misc
+tmp/
+.cache/

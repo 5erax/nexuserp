@@ -1,0 +1,52 @@
+name: Báo lỗi
+description: Hành vi sai so với tài liệu hoặc business rule.
+title: "bug: "
+labels: ["type:bug"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Mô tả lỗi
+      description: Điều gì đang xảy ra sai?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Các bước tái hiện
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Kết quả mong đợi
+      description: Nêu ID business rule trong SRS nếu có (ví dụ INV-002).
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Kết quả thực tế
+    validations:
+      required: true
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Mức độ
+      options:
+        - Critical — mất/sai dữ liệu tiền hoặc tồn kho, lộ dữ liệu, bypass phân quyền
+        - High — chức năng chính không dùng được
+        - Medium — có cách vòng
+        - Low — giao diện, câu chữ
+    validations:
+      required: true
+  - type: textarea
+    id: env
+    attributes:
+      label: Môi trường và log
+      description: Commit, trình duyệt, request id (`requestId`), log liên quan. Không dán secret hoặc dữ liệu thật.
+      render: text

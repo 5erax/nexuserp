@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Báo lỗ hổng bảo mật (riêng tư)
+    url: https://github.com/5erax/nexuserp/security/advisories/new
+    about: Không mở issue công khai cho lỗ hổng bảo mật.
+  - name: Tài liệu dự án
+    url: https://github.com/5erax/nexuserp/blob/main/docs/README.md
+    about: Đọc SRS, ADR và kế hoạch phase trước khi mở issue.

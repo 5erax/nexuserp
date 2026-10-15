@@ -1,0 +1,7 @@
+# Mặc định: maintainer review mọi thay đổi.
+*                   @5erax
+
+# Các khu vực nhạy cảm (giữ rõ ràng để mở rộng khi có thêm người tham gia).
+/.github/           @5erax
+/docs/adr/          @5erax
+/docs/business-rules/ @5erax

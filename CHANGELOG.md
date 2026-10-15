@@ -8,6 +8,7 @@ Mọi thay đổi đáng chú ý của dự án được ghi lại ở đây. Đ
 
 - Khởi tạo repository: tài liệu đặc tả SRS, ADR 0001–0009, kế hoạch phase, quy trình đóng góp, issue/PR templates và kiểm tra tự động cho tài liệu.
 - ADR 0010–0015, baseline bảo mật, chính sách refresh token đồng thời/replay và kế hoạch migration reservation qua Phase 2–3.
+- Nền tảng chạy được: pnpm/Turbo monorepo, NestJS health/readiness và OpenAPI client, Next.js shell/trạng thái UI, Prisma/PostgreSQL baseline organization/branch, Docker profiles, CI và bộ test nền tảng.
 
 ### Changed
 

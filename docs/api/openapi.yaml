@@ -1,0 +1,93 @@
+openapi: 3.0.0
+paths:
+  /api/v1/health:
+    get:
+      operationId: HealthController_live
+      parameters: []
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+      tags: &a1
+        - health
+  /api/v1/health/ready:
+    get:
+      operationId: HealthController_ready
+      parameters: []
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+        "503":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+      tags: *a1
+info:
+  title: NexusERP API
+  description: Phase 0 foundation; business endpoints are not implemented.
+  version: 0.0.0
+  contact: {}
+tags: []
+servers: []
+components:
+  schemas:
+    HealthData:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+            - ok
+            - ready
+      required:
+        - status
+    Meta:
+      type: object
+      properties:
+        requestId:
+          type: string
+      required:
+        - requestId
+    HealthResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/HealthData"
+        meta:
+          $ref: "#/components/schemas/Meta"
+      required:
+        - data
+        - meta
+    ApiError:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+          nullable: true
+        requestId:
+          type: string
+      required:
+        - code
+        - message
+        - details
+        - requestId
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          $ref: "#/components/schemas/ApiError"
+      required:
+        - error

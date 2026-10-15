@@ -1,0 +1,73 @@
+name: nexuserp
+services:
+  postgres:
+    image: postgres:17-bookworm
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-nexus}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Copy .env.example to .env and set POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-nexuserp}
+    ports: ['127.0.0.1:${POSTGRES_PORT:-5432}:5432']
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./infrastructure/docker/init-test-db.sql:/docker-entrypoint-initdb.d/01-test-db.sql:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB']
+      interval: 5s
+      timeout: 3s
+      retries: 15
+  migrate:
+    profiles: [app, dev]
+    build: { context: ., dockerfile: infrastructure/docker/Dockerfile, target: migration }
+    environment:
+      DATABASE_URL: ${COMPOSE_DATABASE_URL:?Set COMPOSE_DATABASE_URL with percent-encoded credentials}
+    depends_on: { postgres: { condition: service_healthy } }
+    restart: 'no'
+  api:
+    profiles: [app]
+    build: { context: ., dockerfile: infrastructure/docker/Dockerfile, target: api }
+    environment:
+      DATABASE_URL: ${COMPOSE_DATABASE_URL:?Set COMPOSE_DATABASE_URL with percent-encoded credentials}
+      API_PORT: 3001
+      NODE_ENV: production
+    depends_on: { migrate: { condition: service_completed_successfully } }
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3001/api/v1/health/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+  web:
+    profiles: [app]
+    build: { context: ., dockerfile: infrastructure/docker/Dockerfile, target: web }
+    ports: ['127.0.0.1:3000:3000']
+    depends_on: { api: { condition: service_healthy } }
+  api-dev:
+    profiles: [dev]
+    build: { context: ., dockerfile: infrastructure/docker/Dockerfile, target: development }
+    command: ['pnpm', '--filter', '@nexus/api', 'dev']
+    environment:
+      DATABASE_URL: ${COMPOSE_DATABASE_URL:?Set COMPOSE_DATABASE_URL with percent-encoded credentials}
+      API_PORT: 3001
+      NODE_ENV: development
+    ports: ['127.0.0.1:3001:3001']
+    volumes:
+      - ./apps/api/src:/workspace/apps/api/src
+    depends_on: { migrate: { condition: service_completed_successfully } }
+  web-dev:
+    profiles: [dev]
+    build: { context: ., dockerfile: infrastructure/docker/Dockerfile, target: development }
+    command: ['pnpm', '--filter', '@nexus/web', 'exec', 'next', 'dev', '--hostname', '0.0.0.0']
+    environment: { API_INTERNAL_URL: 'http://api-dev:3001' }
+    ports: ['127.0.0.1:3000:3000']
+    volumes:
+      - ./apps/web/app:/workspace/apps/web/app
+      - ./apps/web/messages:/workspace/apps/web/messages
+      - ./packages/ui/src:/workspace/packages/ui/src
+    depends_on: [api-dev]
+volumes:
+  postgres-data:

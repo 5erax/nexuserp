@@ -1,0 +1,11 @@
+pnpm-lock.yaml
+.next/
+**/generated/
+**/dist/
+docs/api/openapi.yaml
+packages/contracts/src/schema.d.ts
+**/next-env.d.ts
+.turbo/
+docs/
+*.md
+.github/ISSUE_TEMPLATE/

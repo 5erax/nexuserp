@@ -10,7 +10,14 @@
     "MD036": false, // nhấn mạnh dùng như tiêu đề
     "MD040": false, // ngôn ngữ cho code fence
     "MD041": false, // dòng đầu phải là H1 (PR template)
-    "MD060": false // định dạng cột của bảng
+    "MD060": false, // định dạng cột của bảng
   },
-  "ignores": ["node_modules/**"]
+  "ignores": [
+    "**/node_modules/**",
+    "**/.next/**",
+    "**/generated/**",
+    "**/dist/**",
+    "**/test-results/**",
+    "**/playwright-report/**",
+  ],
 }

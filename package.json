@@ -1,0 +1,59 @@
+{
+  "name": "nexuserp",
+  "version": "0.0.0",
+  "private": true,
+  "packageManager": "pnpm@10.32.1",
+  "engines": {
+    "node": ">=22.12.0 <23"
+  },
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "eslint . && pnpm boundaries",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "test:integration": "pnpm --filter @nexus/api test:integration",
+    "test:e2e": "playwright test",
+    "boundaries": "depcruise apps/api/src --config .dependency-cruiser.cjs",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "docs:lint": "markdownlint-cli2 \"**/*.md\" \"!node_modules\" \"!**/node_modules/**\" \"!**/generated/**\"",
+    "db:generate": "pnpm --filter @nexus/api db:generate",
+    "db:migrate": "pnpm --filter @nexus/api db:migrate",
+    "db:seed": "pnpm --filter @nexus/api db:seed",
+    "db:check": "pnpm --filter @nexus/api db:check",
+    "contracts:generate": "pnpm --filter @nexus/api openapi && pnpm --filter @nexus/contracts generate",
+    "contracts:check": "pnpm contracts:generate && git diff --exit-code -- docs/api/openapi.yaml packages/contracts/src/schema.d.ts",
+    "prepare": "husky",
+    "audit:production": "pnpm audit --prod --audit-level high"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.39.5",
+    "@playwright/test": "1.64.1",
+    "@axe-core/playwright": "4.11.1",
+    "dependency-cruiser": "18.6.0",
+    "eslint": "9.39.5",
+    "eslint-config-next": "16.4.1",
+    "eslint-import-resolver-typescript": "4.4.4",
+    "eslint-plugin-import-x": "4.16.1",
+    "globals": "16.5.0",
+    "husky": "9.1.7",
+    "lint-staged": "16.2.7",
+    "@commitlint/cli": "20.1.0",
+    "@commitlint/config-conventional": "20.0.0",
+    "markdownlint-cli2": "0.23.3",
+    "prettier": "3.8.1",
+    "turbo": "2.11.8",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.71.2"
+  },
+  "pnpm": {
+    "overrides": {
+      "js-yaml@>=4 <4.3.2": "4.3.2",
+      "mysql2@<3.23.1": "3.23.1",
+      "smol-toml@<1.9.0": "1.9.0",
+      "katex@<0.18.2": "0.18.2",
+      "@prisma/config>deepmerge-ts": "8.0.2"
+    }
+  }
+}

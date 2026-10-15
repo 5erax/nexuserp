@@ -41,7 +41,11 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm --filter @nexus/api test:integration:foundation
-      - run: pnpm db:migrate && pnpm db:check
+      - name: Verify intentional database drift blocks merge
+        run: |
+          pnpm db:migrate
+          docker exec ${{ job.services.postgres.id }} psql -U nexus -d nexuserp_test -v ON_ERROR_STOP=1 -c "ALTER TABLE organizations ADD COLUMN ci_gate_probe TEXT"
+          pnpm db:check
       - run: pnpm contracts:check
       - run: pnpm audit:production
       - run: pnpm build

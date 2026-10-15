@@ -14,10 +14,12 @@ Xây một ERP vận hành được cho doanh nghiệp vừa và nhỏ nhiều c
 | Catalog | Sản phẩm, biến thể và SKU, kho |
 | Inventory | Tồn đầu kỳ, stock ledger, số dư, đặt trước, điều chỉnh có lý do và phê duyệt theo ngưỡng, đối soát |
 | CRM | Khách hàng (hồ sơ và lịch sử giao dịch cơ bản) |
-| Sales | Phase 3: tạo đơn, xác nhận và giữ hàng, giao đủ một lần, hủy trước khi xuất kho, lịch sử sự kiện |
+| Sales | Phase 3: tạo đơn, xác nhận và giữ hàng từ kho mặc định cùng chi nhánh, giao đủ một lần; chỉ hủy khi chưa xuất kho và chưa nhận tiền; lịch sử sự kiện |
 | Finance (tối giản) | Phase 3: module Finance sở hữu khoản thanh toán thủ công vào đơn; trạng thái thanh toán suy ra từ tổng tiền đã ghi nhận |
 | Reporting | Dashboard doanh thu, đơn hàng, tồn kho; audit timeline; export |
 | Nền tảng | Monorepo, Docker, CI, migrations, OpenAPI, idempotency, outbox cơ bản, seed data và deployment demo |
+
+Các lựa chọn MVP đã chốt ở [ADR-0010–0015](../adr/README.md): một origin công khai; pnpm/Turborepo; giá biến thể và một giảm giá theo đơn; làm tròn VND HALF_UP, thuế 0; không thu vượt tổng đơn. Thuế 0 chỉ là chính sách demo.
 
 ## Ngoài phạm vi MVP
 

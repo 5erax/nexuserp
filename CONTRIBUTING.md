@@ -66,7 +66,7 @@ Nếu thay đổi chạm vào ranh giới module, mô hình dữ liệu cốt l�
 
 ## Môi trường phát triển
 
-Phiên bản Node.js: xem [`.nvmrc`](.nvmrc). Công cụ monorepo và package manager được chốt trong ADR-0015 (issue `P0-ADR-015`); hướng dẫn cài đặt đầy đủ sẽ có ở README khi issue `P0-DEV-001` hoàn thành.
+Phiên bản Node.js: xem [`.nvmrc`](.nvmrc). Dùng pnpm workspaces và Turborepo theo [ADR-0015](docs/adr/0015-package-manager-and-monorepo-tooling.md); phiên bản cụ thể được ghim khi scaffold (#10). Hướng dẫn cài đặt đầy đủ sẽ có ở README khi issue `P0-DEV-001` hoàn thành.
 
 ## Bảo mật
 

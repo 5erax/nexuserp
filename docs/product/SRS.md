@@ -183,6 +183,8 @@ Các luồng này phải sử dụng trạng thái có định nghĩa, chứ kh�
 | IAM-006 | Không được vô hiệu hóa quản trị viên hoạt động cuối cùng của tổ chức               |
 | IAM-007 | Refresh token phải hỗ trợ rotation và revocation                                   |
 
+Cookie/CSRF theo [ADR-0010](../adr/0010-cookie-and-csrf-strategy.md). Rotation nguyên tử theo family; token đã xoay trong cửa sổ 5 giây, nếu successor vẫn hiện tại, chỉ nhận 409, không cấp token và không đổi cookie. Ngoài cửa sổ hoặc successor cũng đã xoay thì thu hồi family. Xem [bảng trạng thái và test bắt buộc](../architecture/REFRESH_TOKEN_POLICY.md).
+
 RBAC dùng role để gán tập quyền, nhưng RBAC chưa đủ: cần thêm kiểm tra scope theo organization, branch và ownership của từng bản ghi.
 
 Ví dụ `sales.orders.read` không đồng nghĩa với quyền xem mọi đơn hàng trên toàn doanh nghiệp.
@@ -248,7 +250,7 @@ Minh họa quy tắc tính toán; thao tác đặt trước thực tế phải �
 > Bảng chuyển trạng thái đầy đủ (từ → sang, điều kiện, vai trò được phép) được định nghĩa trong
 > issue `P0-DOC-002`; trạng thái giao hàng và thanh toán nên được tách khỏi vòng đời đơn.
 
-Trạng thái CANCELLED từ CONFIRMED chỉ hợp lệ nếu chưa xuất hàng và đã xử lý giữ hàng. RETURN_PROCESS là nhánh nghiệp vụ hoàn trả, không tự ý hoàn nguyên giao dịch đã posted.
+Trạng thái CANCELLED từ CONFIRMED chỉ hợp lệ nếu chưa xuất hàng, chưa có thanh toán thực nhận và đã xử lý giữ hàng trong cùng transaction. MVP từ chối hủy đơn đã nhận tiền vì hoàn/đảo thanh toán thuộc Phase 5 ([ADR-0014](../adr/0014-minimal-payment-recording.md)). RETURN_PROCESS là nhánh nghiệp vụ hoàn trả sau MVP, không tự ý hoàn nguyên giao dịch đã posted.
 
 Cần triển khai `OrderStatePolicy` để định nghĩa transition và điều kiện đi kèm. Tránh cho frontend gửi tùy ý `{ "status": "CLOSED" }` qua một endpoint cập nhật chung.
 
@@ -440,7 +442,9 @@ erDiagram
 
 > Sơ đồ được dựng lại từ danh sách cột của bản gốc; quan hệ được suy ra từ các khóa ngoại. Bản chính thức nằm trong `docs/database/ERD.md` (issue `P0-DB-002`).
 
-Lưu ý thiết kế: Đây là ERD logic rút gọn để nhìn được quan hệ. Bản schema triển khai phải bổ sung các bảng `stock_adjustments`, `stock_transfers`, `stock_transfer_items`, `idempotency_keys`, `audit_logs`, `outbox_events`, `refresh_sessions`, và các khóa ghép để không thể tham chiếu sai tổ chức.
+Lưu ý thiết kế: Đây là ERD logic rút gọn để nhìn được quan hệ. Bản schema triển khai phải bổ sung các bảng `stock_adjustments`, `stock_transfers`, `stock_transfer_items`, `idempotency_keys`, `audit_logs`, `outbox_events`, `refresh_families`, `refresh_sessions`, và các khóa ghép để không thể tham chiếu sai tổ chức. Bảng chuyển kho chỉ thêm ở Phase 5.
+
+Quan hệ reservation → dòng đơn trong sơ đồ là đích Phase 3. Phase 2 chưa có cột/FK `order_item_id`; #58 thêm quan hệ sau khi tạo bảng Sales, kiểm tra dữ liệu và cập nhật fixture. Tuân theo [kế hoạch migration reservation](../database/RESERVATION_MIGRATION_PLAN.md). Kho của đơn được snapshot từ kho mặc định cùng chi nhánh theo [ADR-0011](../adr/0011-warehouse-selection-for-orders.md).
 
 `STOCK_MOVEMENTS` nên là nhật ký append-only với định danh chứng từ rõ ràng. `STOCK_BALANCES` chỉ là bảng tổng hợp được cập nhật nguyên tử, không phải lịch sử giao dịch.
 
@@ -628,7 +632,7 @@ POST `/api/v1/sales/orders`
 }
 ```
 
-Backend không tin giá tiền do frontend cung cấp. Server xác định giá theo price list hợp lệ, tính thuế/giảm giá dựa trên chính sách, sau đó lưu giá snapshot.
+Backend không tin giá tiền do frontend cung cấp; DTO từ chối trường giá/tổng do client cố gửi. MVP lấy `selling_price` của biến thể, snapshot vào dòng đơn, áp dụng một giảm giá theo đơn và `taxTotal=0`. Làm tròn từng dòng HALF_UP đến đồng VND trước khi cộng theo [ADR-0013](../adr/0013-pricing-discount-tax-for-mvp.md); price list nâng cao ở Phase 5.
 
 **Response — 201 Created**
 
@@ -947,15 +951,19 @@ Ghi chú học tập: với mục tiêu học Backend từ đầu, nên tự tri
 Kết quả rà soát baseline v1.0. Không điểm nào cản trở việc bắt đầu Phase 0; mỗi điểm được chốt bằng ADR hoặc
 cập nhật tài liệu trước khi phase liên quan bắt đầu.
 
+ADR-0010–0015 đã ghi quyết định; các issue triển khai vẫn phải hoàn thành acceptance criteria và test. Bảng dưới đây phân biệt làm rõ thiết kế với hoàn thành mã nguồn.
+
 | Điểm | Cần chốt trước | Issue |
 | --- | --- | --- |
 | Đã thống nhất 10 business module ở mục II–III, phase của từng chức năng và các endpoint sau MVP | Đã làm rõ trong tài liệu | `P0-DOC-001` |
 | Bảng chuyển trạng thái đơn hàng; tách trạng thái đơn / giao hàng / thanh toán | Phase 0 | `P0-DOC-002` |
 | Ma trận quyền (role × permission × scope) | Phase 1 | `P0-DOC-003` |
-| Chiến lược CSRF và cookie giữa Next.js và NestJS | Phase 1 | `P0-ADR-010` |
-| Đơn hàng giữ hàng từ kho nào; chi nhánh có bán từ kho chi nhánh khác không | Phase 2 | `P0-ADR-011` |
-| Costing (bình quân gia quyền / FIFO) và phạm vi `/reports/profit` | Phase 2 | `P0-ADR-012` |
-| Giá, giảm giá, thuế ở MVP (ERD chưa có price list) | Phase 3 | `P0-ADR-013` |
-| Ghi nhận thanh toán tối giản ở Phase 3 khi bảng Finance thuộc Phase 5 | Phase 3 | `P0-ADR-014` |
+| Cookie/CSRF và tranh chấp refresh đã chốt ở ADR-0010 | Triển khai/test Phase 1 | `P0-ADR-010` |
+| Một kho mặc định cùng chi nhánh, snapshot vào đơn (ADR-0011) | Triển khai Phase 2–3 | `P0-ADR-011` |
+| Hoãn costing và `/reports/profit` tới Phase 5 (ADR-0012) | Đã chốt phạm vi MVP | `P0-ADR-012` |
+| Giá biến thể, giảm giá theo đơn, thuế 0 (ADR-0013) | Triển khai/test Phase 3 | `P0-ADR-013` |
+| Finance tối giản từ Phase 3, không hoàn tiền ở MVP (ADR-0014) | Triển khai/test Phase 3 | `P0-ADR-014` |
+| pnpm workspaces/Turborepo (ADR-0015); ghim phiên bản khi scaffold | Triển khai Phase 0 | `P0-ADR-015` |
+| Reservation Phase 2 độc lập; FK dòng đơn bổ sung ở #58 theo kế hoạch migration | Triển khai/test Phase 2–3 | `P2-DB-001`, `P3-DB-001` |
 | Bảng `document_sequences` và các CHECK constraint tồn kho | Phase 2 | `P2-DB-001` |
 | Ngữ nghĩa shipment post (giảm `on_hand` và `reserved`, tiêu thụ reservation) | Phase 3 | `P3-SAL-003` |

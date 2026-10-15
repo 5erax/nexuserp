@@ -6,4 +6,8 @@ Phiên khởi tạo qua me, cookie là nguồn xác thực. Query không tự re
 
 Trang bảo vệ chuyển về login với đường dẫn nội bộ để quay lại; không chấp nhận URL ngoài origin. mustChangePassword đưa tới đổi mật khẩu, thành công thu hồi phiên và yêu cầu login lại. Menu dựa trên grants hiện tại chỉ phục vụ trải nghiệm; backend vẫn quyết định permission/scope.
 
+Các trang /admin/users, /admin/roles, /admin/branches, /admin/organization dùng API thật. Bảng dùng chung DataTable có trạng thái và phân trang phía server; tìm kiếm chỉ gửi khi submit, không phát request theo từng phím. Trình gán role/chi nhánh có tải thêm, giữ lựa chọn ở các trang chưa tải để không vô tình xóa quyền. Giới hạn API là 10 role và 100 chi nhánh mỗi user. System role chỉ xem; custom role sửa grant theo nhóm module. Disable/reset và ngừng chi nhánh dùng native dialog, hỗ trợ Escape/focus của browser và khóa thao tác khi đang lưu.
+
+Kiểm chứng: user-form.test.tsx giữ assignment ngoài trang lookup đầu; data-table.test.tsx kiểm tra pagination và không hiển thị cached rows khi lỗi; e2e/admin.spec.ts tạo chi nhánh → role → nhân viên → login bằng nhân viên, kiểm tra branch scope, 403, admin cuối, chi nhánh còn nhân viên, disable/revoke, reset và hồ sơ tổ chức. Axe và màn hình 390px nằm trong luồng này. Không coi kiểm thử IAM là nghiệm thu Catalog/Inventory/Sales.
+
 Tham chiếu: [ADR-0010](../adr/0010-cookie-and-csrf-strategy.md), [refresh policy](../architecture/REFRESH_TOKEN_POLICY.md), [shadcn monorepo](https://ui.shadcn.com/docs/monorepo), [Web Locks](https://developer.mozilla.org/en-US/docs/Web/API/Web_Locks_API).

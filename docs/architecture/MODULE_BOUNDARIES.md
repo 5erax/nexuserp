@@ -12,3 +12,7 @@ Danh sách business module chuẩn: `iam`, `catalog`, `inventory`, `crm`, `sales
 `pnpm boundaries` dùng dependency-cruiser để chặn cycle và các import sai ở trên. ESLint chặn import dependency chưa khai báo. Lint import không thể chứng minh ownership của câu SQL hoặc kiểm soát transaction; review/test vẫn phải kiểm tra việc đó.
 
 API có `presentation / application / domain / infrastructure` khi phát sinh logic tương ứng. Health là module kỹ thuật, không tính vào 10 business module. Thư viện `packages/shared` chưa có utility vì chưa có nhu cầu dùng chung thực tế.
+
+## Dùng scope ở module tiếp theo
+
+Lấy Actor từ AuthorizedRequest, không lấy organization/user/branch access từ body hoặc header tự khai. Application import scopeFilter từ IAM application/access-scope.ts rồi AND scope với điều kiện id, branchId và các filter nghiệp vụ; không ghi đè scope bằng object spread từ query. Catalog chỉ có ORG; Inventory dùng branchId; Sales OWN còn dùng createdBy. Khi chọn chi nhánh làm việc bằng query/body, branchId chỉ thu hẹp phạm vi đã được cấp. List áp scope trước count/pagination; detail/command không tìm thấy trong scope trả 404. Helper không thay thế kiểm tra trạng thái và recheck authority trong transaction ghi.

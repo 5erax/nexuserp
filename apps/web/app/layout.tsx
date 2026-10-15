@@ -32,8 +32,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               </nav>
               <div className="phase-note">
                 <span className="small-label">LỘ TRÌNH</span>
-                <p>Phase 0 — Nền tảng</p>
-                <span>IAM và phân quyền là bước kế tiếp.</span>
+                <p>Phase 1 — Tài khoản và tổ chức</p>
+                <span>Danh mục và tồn kho là bước kế tiếp.</span>
               </div>
             </aside>
             <div className="main-column">

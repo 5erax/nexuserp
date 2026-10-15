@@ -52,6 +52,151 @@ body {
 .profile-details dd {
   margin: 0;
 }
+.list-tools,
+.actions,
+.table-pagination,
+.admin-tabs {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+.list-tools {
+  margin: 1.5rem 0;
+  align-items: end;
+}
+.list-tools label {
+  display: grid;
+  gap: 0.25rem;
+}
+select {
+  font: inherit;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.5rem;
+  min-height: 44px;
+}
+select:focus-visible,
+input:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+.table-scroll {
+  max-width: 100%;
+  overflow: auto;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+table {
+  border-collapse: collapse;
+  min-width: 100%;
+  text-align: left;
+}
+th,
+td {
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+th {
+  font-size: 0.8rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+td {
+  max-width: 350px;
+  overflow-wrap: anywhere;
+}
+.table-pagination {
+  justify-content: end;
+  margin: 1rem 0;
+}
+.table-pagination span {
+  margin-right: auto;
+  color: var(--muted);
+}
+.edit-panel {
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  max-width: 800px;
+}
+.admin-tabs {
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 2rem;
+}
+.admin-tabs a {
+  padding: 0.5rem 0.75rem;
+  text-decoration: none;
+}
+.admin-tabs a[aria-current='page'] {
+  border-bottom: 2px solid var(--accent);
+  font-weight: 700;
+}
+dialog {
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  width: min(500px, calc(100vw - 2rem));
+  max-height: 85dvh;
+  overflow: auto;
+}
+dialog::backdrop {
+  background: rgb(0 0 0/0.45);
+}
+.dialog-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+.dialog-heading button {
+  width: 44px;
+  height: 44px;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: var(--radius);
+}
+.permission-row {
+  grid-template-columns: 1fr minmax(150px, auto);
+  align-items: center;
+}
+.form-stack .check-option {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-weight: 400;
+}
+.check-option input {
+  width: 20px;
+  min-height: 20px;
+  accent-color: var(--accent);
+}
+.field-hint {
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: var(--muted);
+}
+fieldset {
+  min-width: 0;
+  border: 1px solid var(--border);
+  padding: 1rem;
+}
+.check-option {
+  overflow-wrap: anywhere;
+}
+legend {
+  font-weight: 650;
+  padding: 0 0.4rem;
+}
 a {
   color: inherit;
 }

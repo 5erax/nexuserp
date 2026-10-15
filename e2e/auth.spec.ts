@@ -79,6 +79,7 @@ test('login form works at 390px and reports rate limits without losing fields', 
   await page.getByLabel('Mã tổ chức').fill('NEXUS');
   await page.getByLabel('Email', { exact: true }).fill('user@example.test');
   await page.getByLabel('Mật khẩu', { exact: true }).fill('synthetic-password');
+  await expect(page.getByRole('button', { name: 'Đăng nhập', exact: true })).toBeEnabled();
   await page.getByRole('button', { name: 'Đăng nhập', exact: true }).focus();
   await page.keyboard.press('Enter');
   await expect(page.getByRole('main').getByRole('alert')).toContainText('30 giây');

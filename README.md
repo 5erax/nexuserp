@@ -6,7 +6,7 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 ![Status](https://img.shields.io/badge/status-Phase%200%20%E2%80%94%20foundation-orange)
 
-**Trạng thái hiện tại:** Phase 0 (nền tảng sản phẩm và kiến trúc). Tài liệu đặc tả, quy tắc nghiệp vụ, ADR và kế hoạch đã có; **chưa có mã ứng dụng**. Tiến độ được theo dõi tại [GitHub Project](https://github.com/users/5erax/projects/5).
+**Trạng thái hiện tại:** Phase 0. Monorepo, NestJS API, Next.js web shell, OpenAPI client, schema organization/branch, PostgreSQL migration, Docker và CI đã được dựng. **Chưa có đăng nhập hoặc nghiệp vụ bán hàng/tồn kho.** Xem [hướng dẫn chạy](docs/development/SETUP.md); tiến độ theo dõi tại [GitHub Project](https://github.com/users/5erax/projects/5).
 
 *English summary:* NexusERP is a portfolio-grade, multi-branch ERP (sales, inventory, IAM first) built as a modular monolith with NestJS, Next.js and PostgreSQL. The goal is to demonstrate correct business logic rather than CRUD screens: atomic stock reservation under concurrency, idempotent commands, an append-only inventory ledger, scoped RBAC and automated tests. Specs, business rules and ADRs live in [`docs/`](docs/README.md).
 
@@ -72,7 +72,21 @@ Mỗi business module (`iam`, `catalog`, `crm`, `sales`, `inventory`, ...) có l
 
 ## Bắt đầu nhanh
 
-Hướng dẫn chạy cục bộ (Docker Compose cho PostgreSQL, API và web) sẽ được thêm khi hoàn thành issue `P0-DEV-001`. Hiện tại bạn có thể:
+Yêu cầu Node 22.12+ trong nhánh 22, pnpm 10.32.1 và Docker Compose v2 (hoặc PostgreSQL 17 có sẵn). Sao chép ba file `.env.example` ở gốc, `apps/api`, `apps/web` sang `.env` cùng thư mục rồi chạy:
+
+```sh
+corepack enable
+corepack prepare pnpm@10.32.1 --activate
+pnpm install --frozen-lockfile
+pnpm db:generate
+docker compose up -d postgres
+pnpm db:migrate
+pnpm dev
+```
+
+Mở [http://localhost:3000](http://localhost:3000); trạng thái kết nối đọc từ API và PostgreSQL thật. Muốn chạy toàn bộ bằng Docker: `docker compose --profile app up --build -d`. Hướng dẫn Windows, test, production build và xử lý lỗi ở [SETUP](docs/development/SETUP.md), cấu hình ở [CONFIGURATION](docs/development/CONFIGURATION.md).
+
+Các tài liệu sản phẩm:
 
 1. Đọc [tài liệu đặc tả SRS](docs/product/SRS.md).
 2. Xem [chỉ mục tài liệu](docs/README.md) và [các ADR](docs/adr/README.md).

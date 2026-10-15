@@ -56,3 +56,5 @@ Thumbs.db
 # Misc
 tmp/
 .cache/
+apps/api/src/generated/
+apps/web/next-env.d.ts

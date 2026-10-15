@@ -1,0 +1,7 @@
+{
+  "name": "@nexus/shared",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Pure utilities only; add an export when a real shared use case exists."
+}

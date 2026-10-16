@@ -532,6 +532,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/sales/orders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["OrdersController_list"];
+        put?: never;
+        post: operations["OrdersController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sales/orders/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["OrdersController_detail"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["OrdersController_update"];
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1072,6 +1104,118 @@ export interface components {
         };
         RejectAdjustmentInput: {
             reason: string;
+        };
+        OrderSummary: {
+            /** Format: uuid */
+            id: string;
+            orderNumber: string;
+            /** @enum {string} */
+            status: "DRAFT" | "CONFIRMED" | "CANCELLED" | "FULFILLED";
+            /** @enum {string} */
+            currency: "VND";
+            /** Format: uuid */
+            branchId: string;
+            /** Format: uuid */
+            warehouseId: string;
+            /** Format: uuid */
+            customerId: string;
+            customerName: string;
+            /** Format: uuid */
+            createdBy: string;
+            subtotal: string;
+            /** @enum {string} */
+            discountType: "NONE" | "AMOUNT" | "PERCENT";
+            discountValue: string;
+            discountTotal: string;
+            taxTotal: string;
+            grandTotal: string;
+            note: string | null;
+            version: number;
+            itemCount: number;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        OrderListResponse: {
+            data: components["schemas"]["OrderSummary"][];
+            meta: components["schemas"]["PageMeta"];
+        };
+        OrderLineData: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            variantId: string;
+            sku: string;
+            productName: string;
+            quantity: string;
+            unitPrice: string;
+            lineTotal: string;
+            deliveredQuantity: string;
+        };
+        OrderData: {
+            /** Format: uuid */
+            id: string;
+            orderNumber: string;
+            /** @enum {string} */
+            status: "DRAFT" | "CONFIRMED" | "CANCELLED" | "FULFILLED";
+            /** @enum {string} */
+            currency: "VND";
+            /** Format: uuid */
+            branchId: string;
+            /** Format: uuid */
+            warehouseId: string;
+            /** Format: uuid */
+            customerId: string;
+            customerName: string;
+            /** Format: uuid */
+            createdBy: string;
+            subtotal: string;
+            /** @enum {string} */
+            discountType: "NONE" | "AMOUNT" | "PERCENT";
+            discountValue: string;
+            discountTotal: string;
+            taxTotal: string;
+            grandTotal: string;
+            note: string | null;
+            version: number;
+            itemCount: number;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+            items: components["schemas"]["OrderLineData"][];
+        };
+        OrderResponse: {
+            data: components["schemas"]["OrderData"];
+            meta: components["schemas"]["ResponseMeta"];
+        };
+        OrderLineInput: {
+            /** Format: uuid */
+            variantId: string;
+            quantity: string;
+        };
+        DiscountInput: {
+            /** @enum {string} */
+            type: "NONE" | "AMOUNT" | "PERCENT";
+            value: string;
+        };
+        CreateOrderInput: {
+            /** Format: uuid */
+            customerId: string;
+            items: components["schemas"]["OrderLineInput"][];
+            discount?: components["schemas"]["DiscountInput"];
+            note?: string | null;
+            /** Format: uuid */
+            branchId: string;
+        };
+        UpdateOrderInput: {
+            /** Format: uuid */
+            customerId?: string;
+            items?: components["schemas"]["OrderLineInput"][];
+            discount?: components["schemas"]["DiscountInput"];
+            note?: string | null;
+            version: number;
         };
     };
     responses: never;
@@ -6016,6 +6160,469 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AdjustmentResponse"];
+                };
+            };
+            /** @description API error; inspect error.code and error.requestId */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description API error; inspect error.code and error.requestId */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description API error; inspect error.code and error.requestId */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description API error; inspect error.code and error.requestId */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description API error; inspect error.code and error.requestId */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description API error; inspect error.code and error.requestId */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description API error; inspect error.code and error.requestId */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description API error; inspect error.code and error.requestId */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description API error; inspect error.code and error.requestId */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description API error; inspect error.code and error.requestId */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    OrdersController_list: {
+        parameters: {
+            query?: {
+                page?: number;
+                pageSize?: number;
+                q?: string;
+                sortOrder?: "asc" | "desc";
+                branchId?: string;
+                customerId?: string;
+                status?: "DRAFT" | "CONFIRMED" | "CANCELLED" | "FULFILLED";
+                createdFrom?: string;
+                createdTo?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderListResponse"];
+                };
+            };
+            /** @description API error; inspect error.code and error.requestId */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description API error; inspect error.code and error.requestId */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description API error; inspect error.code and error.requestId */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description API error; inspect error.code and error.requestId */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description API error; inspect error.code and error.requestId */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description API error; inspect error.code and error.requestId */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description API error; inspect error.code and error.requestId */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description API error; inspect error.code and error.requestId */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description API error; inspect error.code and error.requestId */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description API error; inspect error.code and error.requestId */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    OrdersController_create: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+                "X-CSRF-Token": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateOrderInput"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderResponse"];
+                };
+            };
+            /** @description API error; inspect error.code and error.requestId */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description API error; inspect error.code and error.requestId */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description API error; inspect error.code and error.requestId */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description API error; inspect error.code and error.requestId */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description API error; inspect error.code and error.requestId */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description API error; inspect error.code and error.requestId */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description API error; inspect error.code and error.requestId */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description API error; inspect error.code and error.requestId */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description API error; inspect error.code and error.requestId */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description API error; inspect error.code and error.requestId */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    OrdersController_detail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderResponse"];
+                };
+            };
+            /** @description API error; inspect error.code and error.requestId */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description API error; inspect error.code and error.requestId */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description API error; inspect error.code and error.requestId */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description API error; inspect error.code and error.requestId */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description API error; inspect error.code and error.requestId */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description API error; inspect error.code and error.requestId */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description API error; inspect error.code and error.requestId */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description API error; inspect error.code and error.requestId */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description API error; inspect error.code and error.requestId */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description API error; inspect error.code and error.requestId */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    OrdersController_update: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-CSRF-Token": string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateOrderInput"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderResponse"];
                 };
             };
             /** @description API error; inspect error.code and error.requestId */

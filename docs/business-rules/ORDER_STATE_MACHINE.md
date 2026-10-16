@@ -49,3 +49,5 @@ Tên permission orders/shipments ở bảng có prefix `sales.`. `orders.history
 PARTIALLY_FULFILLED, CLOSED, RETURN_PROCESS chỉ thiết kế Phase 5: return là chứng từ đảo/hoàn riêng, không sửa shipment/movement/payment gốc. Không đưa trạng thái này vào DTO MVP.
 
 Test table-driven #60 bao phủ toàn bộ 24 ô của bảng; thêm totals=0, từng guard thất bại, cancel sau nhận tiền, cancel đua ship/pay, reserve đa SKU rollback, confirm đồng thời và replay cùng/khác key. Kiểm chứng SQL không còn reservation ACTIVE sau cancel/ship, movement chỉ sinh một lần và outbox chỉ chứa transition đã commit (#62–65, #70).
+
+Đã có `OrderStatePolicy` với unit test toàn bộ 24 ô và guard thu tiền/xuất kho/giữ hàng; API #60 sử dụng policy cho PATCH DRAFT, khóa order và kiểm tra version để ngăn ghi đè khi sửa đồng thời. Đây là policy trạng thái; guard đủ hàng, shipment DRAFT hợp lệ và tác dụng phụ reserve/release/consume/payment phải được application command của #62–65 kiểm tra trong cùng transaction. Các endpoint transition và outbox chưa được coi là hoàn thành bởi riêng unit test policy.

@@ -23,6 +23,20 @@ Flaky test được xem là lỗi: giữ trace/seed/requestId, tái hiện đún
 
 Kiểm tra chính xác sau mỗi phần thay đổi; chạy full CI trước merge. Không chạy lại cùng test nhiều lần trên code không đổi để tạo cảm giác chắc chắn. Khi test thất bại phải phân biệt server chưa chạy với lỗi ứng dụng, giữ log đủ điều tra nhưng không chứa secret.
 
+## Inventory concurrency (#54)
+
+`pnpm --filter @nexus/api test:inventory` migrate database `_test` rồi chạy `stock-concurrency.integration-spec.ts`. Suite có 20 vòng liên tiếp trong một process Jest, mỗi vòng dùng SKU/reference UUID mới và ba kịch bản (60 test cases):
+
+- 100 application commands tranh 10 đơn vị: đúng 10 thành công, 90 lỗi `INSUFFICIENT_STOCK`; giải phóng một nửa và tiêu thụ một nửa, kiểm tra movement/số dư cuối.
+- 10 command nhiều SKU có thứ tự dòng đảo nhau: tất cả giữ hàng rồi tiêu thụ thành công, không deadlock kéo dài.
+- 100 lần thử cùng `Idempotency-Key`: chỉ một movement/key và một đơn vị tồn; các kết quả khác là committed replay hoặc `REQUEST_IN_PROGRESS`.
+
+Sau mỗi trạng thái đã commit, suite gọi ReconciliationService để so sánh ledger và reservation ACTIVE với cả hai số dư. Dữ liệu đúng phải có total=0; không chỉ kiểm tra HTTP/Promise thành công. Các tác vụ song song được đợi kết thúc trước assert/cleanup; không dùng sleep để tạo race, không đổi pool/transaction timeout hoặc tắt CHECK/FK. Timeout test là 30 giây mỗi kịch bản. Coverage riêng của lệnh focused ở `apps/api/coverage/inventory`, không ghi đè coverage full integration.
+
+`pnpm --filter @nexus/api test:inventory:mutation` tạm bỏ đúng một điều kiện `on_hand - reserved >= quantity`, chạy ca 100 contenders của vòng đầu, yêu cầu thất bại ở assertion mã lỗi rồi khôi phục đúng nội dung source trong finally. CHECK PostgreSQL vẫn bảo vệ reserved<=on_hand, nên lỗi hồi quy là P2010 thay cho 409 `INSUFFICIENT_STOCK`; không tuyên bố mutation tạo overselling khi lớp CHECK vẫn hoạt động. Log nằm ở `apps/api/coverage/stock-mutation.log`. Chạy focused/full integration trước mutation để migrate test database; không chạy script trên checkout đang phục vụ dev server hoặc song song một test/build khác.
+
+Full integration/foundation CI bao gồm đủ 20 vòng; quality job chạy thêm mutation và giữ log trong artifact coverage. Kết quả cục bộ đầu tiên: 60/60 cases qua, mutation bị phát hiện và source được khôi phục. Đây là kiểm chứng application concurrency trên PostgreSQL thật, không phải số đo p95 của API/HTTP (#77). Khi #58 thêm Sales FK/CHECK, fixture ACTIVE phải chuyển sang dòng đơn thật theo kế hoạch migration, không tắt constraint để giữ test xanh.
+
 ## Truy vết
 
 [Các kịch bản](ACCEPTANCE_SCENARIOS.md) và bảng trong `business-rules/*_RULES.md` là kế hoạch, không phải kết quả pass. Khi có test, thay `planned:#issue` bằng đường dẫn và tên test đã chạy trong cùng PR. `pnpm docs:check` kiểm tra không thiếu/trùng rule SRS và mỗi issue Phase 1–4 được ánh xạ story.

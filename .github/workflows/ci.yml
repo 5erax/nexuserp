@@ -41,6 +41,7 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm --filter @nexus/api test:integration:foundation
+      - run: pnpm --filter @nexus/api test:inventory:mutation
       - run: pnpm db:migrate && pnpm db:check
       - run: pnpm contracts:check
       - run: pnpm audit:production

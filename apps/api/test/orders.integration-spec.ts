@@ -664,7 +664,9 @@ describe('Sales draft orders, pricing and scoped lifecycle API', () => {
     }
   });
   it('accepts 100 long-name SKU lines without exceeding bounded audit/event payloads', async () => {
-    const p = await prisma.product.create({ data: { organizationId: org, name: 'N'.repeat(200) } });
+    const p = await prisma.product.create({
+      data: { organizationId: org, name: '花'.repeat(200) },
+    });
     const rows = Array.from({ length: 100 }, () => ({
       id: randomUUID(),
       organizationId: org,
@@ -676,8 +678,122 @@ describe('Sales draft orders, pricing and scoped lifecycle API', () => {
     await prisma.productVariant.createMany({ data: rows });
     const doc = await draft(owner, {
       items: rows.map((row) => ({ variantId: row.id, quantity: '1' })),
+      note: '\u0001'.repeat(2000),
     });
     expect(doc).toMatchObject({ itemCount: 100, grandTotal: '100' });
     expect(doc.items).toHaveLength(100);
+    await call('patch', '/' + doc.id)
+      .send({
+        version: 0,
+        items: rows.map((row) => ({ variantId: row.id, quantity: '2' })),
+        note: '\u0002'.repeat(2000),
+      })
+      .expect(200);
+    const changes = await prisma.auditLog.findMany({
+      where: { organizationId: org, entityId: doc.id, action: 'sales.order_items_updated' },
+    });
+    const lines = changes.flatMap((row) => (row.changes as { items: unknown[] }).items);
+    expect(lines).toHaveLength(100);
+    expect(
+      await prisma.orderEvent.count({
+        where: { organizationId: org, orderId: doc.id, action: 'sales.order_note_updated' },
+      }),
+    ).toBe(2);
+  });
+  it('edits drafts against an inactive snapshotted warehouse without selecting a replacement', async () => {
+    const b = await prisma.branch.create({
+      data: {
+        organizationId: org,
+        code: 'ED-' + randomUUID().slice(0, 8),
+        name: 'Draft warehouse branch',
+      },
+    });
+    const wh = await prisma.warehouse.create({
+      data: {
+        organizationId: org,
+        branchId: b.id,
+        code: 'ED-' + randomUUID().slice(0, 8),
+        name: 'Draft warehouse',
+        isDefault: true,
+      },
+    });
+    const client = await prisma.customer.create({
+      data: {
+        organizationId: org,
+        branchId: b.id,
+        createdBy: ownerId,
+        name: 'Draft warehouse customer',
+      },
+    });
+    const doc = await draft(owner, { branchId: b.id, customerId: client.id });
+    await request(app.getHttpServer())
+      .patch('/api/v1/warehouses/' + wh.id)
+      .set('Cookie', `nexus_access=${owner.accessToken}; nexus_csrf=${owner.csrf}`)
+      .set('Origin', config.WEB_ORIGIN)
+      .set('X-CSRF-Token', owner.csrf)
+      .send({ status: 'INACTIVE' })
+      .expect(200);
+    const edited = (
+      await call('patch', '/' + doc.id)
+        .send({ version: 0, note: 'Editable draft' })
+        .expect(200)
+    ).body.data;
+    expect(edited).toMatchObject({
+      warehouseId: wh.id,
+      note: 'Editable draft',
+      version: 1,
+      status: 'DRAFT',
+    });
+  });
+  it('records actual customer, note, discount and equally-priced variant changes', async () => {
+    const a = await newVariant('50'),
+      b = await newVariant('50');
+    const client = await prisma.customer.create({
+      data: { organizationId: org, branchId: branch, createdBy: ownerId, name: 'Changed customer' },
+    });
+    const doc = await draft(owner, {
+      items: [{ variantId: a.id, quantity: '1' }],
+      note: 'Before note',
+    });
+    await call('patch', '/' + doc.id)
+      .send({
+        version: 0,
+        customerId: client.id,
+        items: [{ variantId: b.id, quantity: '1' }],
+        note: 'After note',
+        discount: { type: 'AMOUNT', value: '1' },
+      })
+      .expect(200);
+    const logs = await prisma.auditLog.findMany({
+      where: { organizationId: org, entityId: doc.id },
+    });
+    expect(logs.find((row) => row.action === 'sales.order_updated')!.changes).toMatchObject({
+      before: { customerId: customer, discountType: 'NONE', grandTotal: '50' },
+      after: { customerId: client.id, discountType: 'AMOUNT', grandTotal: '49' },
+    });
+    const itemChanges = logs
+      .filter((row) => row.action === 'sales.order_items_updated')
+      .flatMap((row) => (row.changes as { items: unknown[] }).items);
+    expect(itemChanges).toEqual(
+      expect.arrayContaining([
+        {
+          before: expect.objectContaining({ variantId: a.id, unitPrice: '50', quantity: '1.000' }),
+          after: null,
+        },
+        {
+          before: null,
+          after: expect.objectContaining({ variantId: b.id, unitPrice: '50', quantity: '1.000' }),
+        },
+      ]),
+    );
+    const notes = logs
+      .filter((row) => row.action === 'sales.order_note_updated')
+      .map((row) => row.changes);
+    expect(notes).toEqual(
+      expect.arrayContaining([
+        { before: { note: 'Before note' } },
+        { after: { note: 'After note' } },
+      ]),
+    );
   });
 });

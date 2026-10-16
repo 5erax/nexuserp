@@ -12,6 +12,10 @@ const schema = z.object({
   JWT_SECRET: z.string().min(32).max(256),
   CSRF_SECRET: z.string().min(32).max(256),
   API_RATE_LIMIT: z.coerce.number().int().min(1).max(10000).default(300),
+  INVENTORY_APPROVAL_THRESHOLD: z
+    .string()
+    .regex(/^(0|[1-9]\d{0,14})(\.\d{1,3})?$/)
+    .default('10'),
   TRUSTED_PROXY_IP: z
     .string()
     .refine((value) => isIP(value) !== 0)

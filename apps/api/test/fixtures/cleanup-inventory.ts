@@ -12,8 +12,12 @@ export async function cleanupInventory(prisma: PrismaService, organizationIds: s
     await tx.$executeRaw`ALTER TABLE stock_movements ENABLE TRIGGER stock_movements_immutable`;
     await tx.stockReservation.deleteMany({ where });
     await tx.stockBalance.deleteMany({ where });
+    await tx.$executeRaw`ALTER TABLE stock_adjustment_items DISABLE TRIGGER stock_adjustment_items_immutable`;
+    await tx.$executeRaw`ALTER TABLE stock_adjustments DISABLE TRIGGER stock_adjustments_immutable`;
     await tx.stockAdjustmentItem.deleteMany({ where });
     await tx.stockAdjustment.deleteMany({ where });
+    await tx.$executeRaw`ALTER TABLE stock_adjustment_items ENABLE TRIGGER stock_adjustment_items_immutable`;
+    await tx.$executeRaw`ALTER TABLE stock_adjustments ENABLE TRIGGER stock_adjustments_immutable`;
     await tx.warehouse.deleteMany({ where });
     await tx.productVariant.deleteMany({ where });
     await tx.product.deleteMany({ where });

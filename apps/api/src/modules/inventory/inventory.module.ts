@@ -8,6 +8,8 @@ import { InventoryReadsService } from './application/inventory-reads.service';
 import { InventoryController } from './presentation/inventory.controller';
 import { IamModule } from '../iam/iam.module';
 import { AuditModule } from '../audit/audit.module';
+import { AdjustmentsService } from './application/adjustments.service';
+import { AdjustmentsController } from './presentation/adjustments.controller';
 
 @Module({
   imports: [IamModule, AuditModule],
@@ -17,8 +19,9 @@ import { AuditModule } from '../audit/audit.module';
     ReconciliationService,
     WarehousesService,
     InventoryReadsService,
+    AdjustmentsService,
   ],
   exports: [StockLedgerService, ReservationsService, ReconciliationService, WarehousesService],
-  controllers: [ReconciliationController, InventoryController],
+  controllers: [ReconciliationController, InventoryController, AdjustmentsController],
 })
 export class InventoryModule {}

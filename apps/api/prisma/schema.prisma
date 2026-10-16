@@ -327,6 +327,7 @@ model StockAdjustment {
   kind              String                @db.VarChar(16)
   status            String                @default("DRAFT") @db.VarChar(16)
   reason            String                @db.VarChar(1000)
+  decisionReason    String?               @map("decision_reason") @db.VarChar(1000)
   approvalThreshold Decimal               @default(10) @map("approval_threshold") @db.Decimal(18, 3)
   approvedAt        DateTime?             @map("approved_at") @db.Timestamptz(3)
   postedAt          DateTime?             @map("posted_at") @db.Timestamptz(3)

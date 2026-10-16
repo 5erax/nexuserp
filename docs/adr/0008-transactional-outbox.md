@@ -23,3 +23,5 @@ Sau khi một transaction thành công (ví dụ xác nhận đơn) hệ thống
 ## Cách kiểm chứng
 
 Test độ tin cậy: worker chết giữa chừng vẫn xử lý lại đúng một hiệu ứng (issue `P3-OBX-001`, Phase 6).
+
+MVP #67 có dispatcher trong tiến trình, lease/token, claim SKIP LOCKED tối đa 10, backoff và DEAD sau 5 lần. Consumer đầu tiên là projection receipt append-only unique event ID: crash sau effect trước ack vẫn chỉ có một receipt. Đây là giao ít nhất một lần với hiệu ứng consumer idempotent, không phải exactly-once cho dịch vụ ngoài. Xem [runbook và kiểm thử](../development/OUTBOX.md); producer xác nhận đơn nằm ở #62.

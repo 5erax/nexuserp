@@ -25,6 +25,9 @@ export async function cleanupInventory(prisma: PrismaService, organizationIds: s
     await tx.salesOrderItem.deleteMany({ where });
     await tx.salesOrder.deleteMany({ where });
     await tx.customer.deleteMany({ where });
+    await tx.$executeRaw`ALTER TABLE outbox_receipts DISABLE TRIGGER outbox_receipts_immutable`;
+    await tx.outboxReceipt.deleteMany({ where });
+    await tx.$executeRaw`ALTER TABLE outbox_receipts ENABLE TRIGGER outbox_receipts_immutable`;
     await tx.outboxEvent.deleteMany({ where });
     await tx.$executeRaw`ALTER TABLE order_events ENABLE TRIGGER order_events_immutable`;
     await tx.$executeRaw`ALTER TABLE payments ENABLE TRIGGER payments_immutable`;

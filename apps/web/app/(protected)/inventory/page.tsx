@@ -29,6 +29,11 @@ function Inventory() {
     { data: actor } = useSession();
   const has = (permission: string) =>
     actor?.grants[permission]?.some((scope) => scope === 'ORG' || scope === 'BRANCH');
+  const canCreate =
+    has('inventory.adjustments.create') &&
+    has('inventory.movements.read') &&
+    has('inventory.warehouses.read') &&
+    actor?.grants['catalog.products.read']?.includes('ORG');
   const tabs = [
     { id: 'balances', title: 'Số dư tồn kho', allowed: has('inventory.balances.read') },
     { id: 'movements', title: 'Biến động kho', allowed: has('inventory.movements.read') },
@@ -140,10 +145,10 @@ function Inventory() {
             </Button>
           ))}
       </nav>
-      {has('inventory.adjustments.create') && has('inventory.movements.read') && !creating ? (
+      {canCreate && !creating ? (
         <Button onClick={() => setCreating(true)}>Tạo phiếu tồn kho</Button>
       ) : null}
-      {creating ? (
+      {canCreate && creating ? (
         <section className="edit-panel">
           <AdjustmentForm
             onCancel={() => setCreating(false)}
@@ -157,13 +162,15 @@ function Inventory() {
         </p>
       ) : (
         <>
-          <WarehousePicker
-            value={warehouseId}
-            onChange={(id) => {
-              setWarehouse(id);
-              reset();
-            }}
-          />
+          {has('inventory.warehouses.read') ? (
+            <WarehousePicker
+              value={warehouseId}
+              onChange={(id) => {
+                setWarehouse(id);
+                reset();
+              }}
+            />
+          ) : null}
           <form
             key={view}
             className="list-tools"

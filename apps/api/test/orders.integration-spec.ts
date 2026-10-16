@@ -592,8 +592,11 @@ describe('Sales draft orders, pricing and scoped lifecycle API', () => {
     expect(await prisma.idempotencyKey.count({ where: { organizationId: org, key } })).toBe(0);
     await call('post', '', owner, key).send(input()).expect(201);
     const doc = await draft();
+    const auditService = app.get(AuditService);
+    const writeAudit = auditService.record.bind(auditService);
     const editAudit = jest
-      .spyOn(app.get(AuditService), 'record')
+      .spyOn(auditService, 'record')
+      .mockImplementationOnce(writeAudit)
       .mockRejectedValueOnce(new Error('synthetic edit audit failure'));
     try {
       await call('patch', '/' + doc.id)

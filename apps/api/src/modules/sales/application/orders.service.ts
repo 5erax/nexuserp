@@ -39,6 +39,15 @@ type Query = {
 const customer = { select: { name: true } } as const;
 const include = { customer, items: { orderBy: { id: 'asc' as const } } } as const;
 type Document = Prisma.SalesOrderGetPayload<{ include: typeof include }>;
+const lineState = (item: Document['items'][number]) => ({
+  variantId: item.variantId,
+  sku: item.sku,
+  productName: item.productName,
+  quantity: item.quantity.toFixed(3),
+  unitPrice: item.unitPrice.toFixed(0),
+  lineTotal: item.lineTotal.toFixed(0),
+  deliveredQuantity: item.deliveredQuantity.toFixed(3),
+});
 const summary = (doc: SalesOrder & { customer: { name: string } }, itemCount: number) => ({
   id: doc.id,
   orderNumber: doc.orderNumber,
@@ -65,13 +74,7 @@ const data = (doc: Document) => ({
   ...summary(doc, doc.items.length),
   items: doc.items.map((item) => ({
     id: item.id,
-    variantId: item.variantId,
-    sku: item.sku,
-    productName: item.productName,
-    quantity: item.quantity.toFixed(3),
-    unitPrice: item.unitPrice.toFixed(0),
-    lineTotal: item.lineTotal.toFixed(0),
-    deliveredQuantity: item.deliveredQuantity.toFixed(3),
+    ...lineState(item),
   })),
 });
 const conflict = (code: string, message: string) => new ConflictException({ code, message });
@@ -260,35 +263,70 @@ export class OrdersService {
     doc: Document,
     action: string,
     context: RequestAudit,
+    before?: Document,
   ) {
-    const payload = {
-      status: doc.status,
-      version: doc.version,
-      itemCount: doc.items.length,
-      subtotal: doc.subtotal.toFixed(0),
-      discountTotal: doc.discountTotal.toFixed(0),
-      grandTotal: doc.grandTotal.toFixed(0),
-    };
-    await tx.orderEvent.create({
-      data: {
+    const header = (order: Document) => ({
+      status: order.status,
+      version: order.version,
+      customerId: order.customerId,
+      discountType: order.discountType,
+      discountValue: order.discountValue.toFixed(order.discountType === 'PERCENT' ? 2 : 0),
+      itemCount: order.items.length,
+      subtotal: order.subtotal.toFixed(0),
+      discountTotal: order.discountTotal.toFixed(0),
+      grandTotal: order.grandTotal.toFixed(0),
+    });
+    const record = async (eventAction: string, changes: Prisma.InputJsonObject) => {
+      await tx.orderEvent.create({
+        data: {
+          organizationId: actor.organizationId,
+          orderId: doc.id,
+          actorId: actor.id,
+          action: eventAction,
+          requestId: context.requestId,
+          payload: changes,
+        },
+      });
+      await this.audit.record(tx, {
         organizationId: actor.organizationId,
-        orderId: doc.id,
+        branchId: doc.branchId,
         actorId: actor.id,
-        action,
-        requestId: context.requestId,
-        payload,
-      },
+        action: eventAction,
+        entityType: 'sales_order',
+        entityId: doc.id,
+        ...context,
+        changes,
+      });
+    };
+    await record(action, {
+      ...(before ? { before: header(before) } : {}),
+      after: header(doc),
     });
-    await this.audit.record(tx, {
-      organizationId: actor.organizationId,
-      branchId: doc.branchId,
-      actorId: actor.id,
-      action,
-      entityType: 'sales_order',
-      entityId: doc.id,
-      ...context,
-      changes: { after: payload },
-    });
+    if (!before) return;
+    // Each side of a 2,000-character note can occupy 12 KiB once JSON-escaped.
+    if (before.note !== doc.note) {
+      await record('sales.order_note_updated', { before: { note: before.note } });
+      await record('sales.order_note_updated', { after: { note: doc.note } });
+    }
+    const oldLines = new Map(before.items.map((item) => [item.variantId, lineState(item)]));
+    const newLines = new Map(doc.items.map((item) => [item.variantId, lineState(item)]));
+    let batch: Prisma.InputJsonValue[] = [];
+    for (const id of [...new Set([...oldLines.keys(), ...newLines.keys()])].sort()) {
+      const oldLine = oldLines.get(id) ?? null,
+        newLine = newLines.get(id) ?? null;
+      if (JSON.stringify(oldLine) === JSON.stringify(newLine)) continue;
+      const change = { before: oldLine, after: newLine };
+      // Leave space for jsonb's additional whitespace inside the 16 KiB database limit.
+      if (
+        batch.length &&
+        Buffer.byteLength(JSON.stringify({ items: [...batch, change] })) > 12000
+      ) {
+        await record('sales.order_items_updated', { items: batch });
+        batch = [];
+      }
+      batch.push(change);
+    }
+    if (batch.length) await record('sales.order_items_updated', { items: batch });
   }
   create(actor: Actor, input: Draft & { branchId: string }, context: RequestAudit) {
     return new IdempotentCommand(
@@ -365,7 +403,6 @@ export class OrdersService {
       }
       if (before.version !== input.version)
         throw conflict('ORDER_VERSION_CONFLICT', 'Đơn đã được người khác sửa, hãy tải lại');
-      await this.warehouses.lockActive(tx, actor.organizationId, before.warehouseId);
       const snapshot = await this.snapshots(tx, actor, before.branchId, {
         customerId: input.customerId ?? before.customerId,
         items:
@@ -388,7 +425,7 @@ export class OrdersService {
         data: { ...snapshot, version: { increment: 1 } },
         include,
       });
-      await this.record(tx, actor, doc, 'sales.order_updated', context);
+      await this.record(tx, actor, doc, 'sales.order_updated', context, before);
       return data(doc);
     });
   }

@@ -707,7 +707,7 @@ describe('Sales draft orders, pricing and scoped lifecycle API', () => {
     const b = await prisma.branch.create({
       data: {
         organizationId: org,
-        code: 'ED-' + randomUUID().slice(0, 8),
+        code: 'ED-' + randomUUID().slice(0, 8).toUpperCase(),
         name: 'Draft warehouse branch',
       },
     });
@@ -715,7 +715,7 @@ describe('Sales draft orders, pricing and scoped lifecycle API', () => {
       data: {
         organizationId: org,
         branchId: b.id,
-        code: 'ED-' + randomUUID().slice(0, 8),
+        code: 'ED-' + randomUUID().slice(0, 8).toUpperCase(),
         name: 'Draft warehouse',
         isDefault: true,
       },

@@ -16,6 +16,7 @@ import { ReservationsService } from '../src/modules/inventory/application/reserv
 import { AuditService } from '../src/modules/audit/application/audit.service';
 import { cleanupInventory } from './fixtures/cleanup-inventory';
 import { cleanupIam } from './fixtures/cleanup-iam';
+import { reservationFixture } from './fixtures/reservation-order';
 
 describe('INV-004/005/007 Opening and approved stock adjustments', () => {
   let app: INestApplication, prisma: PrismaService;
@@ -421,14 +422,13 @@ describe('INV-004/005/007 Opening and approved stock adjustments', () => {
         quantityDelta: '10',
       }),
     );
-    await prisma.$transaction((tx) =>
-      app.get(ReservationsService).reserve(tx, {
-        organizationId: org,
-        warehouseId: warehouse,
-        referenceId: randomUUID(),
-        items: [{ variantId: id!, quantity: '4' }],
-      }),
-    );
+    const reservation = await reservationFixture(prisma, {
+      organizationId: org,
+      warehouseId: warehouse,
+      referenceId: randomUUID(),
+      items: [{ variantId: id!, quantity: '4' }],
+    });
+    await prisma.$transaction((tx) => app.get(ReservationsService).reserve(tx, reservation));
     const doc = await draft([{ variantId: id!, quantityDelta: '-7' }], staff, 'ADJUSTMENT');
     expect((await action(doc.id, 'post', staff).expect(409)).body.error.code).toBe(
       'INSUFFICIENT_STOCK',

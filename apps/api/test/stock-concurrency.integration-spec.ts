@@ -12,6 +12,7 @@ import { IdempotentCommand } from '../src/common/idempotency/command';
 import { PasswordService } from '../src/modules/iam/application/password.service';
 import { cleanupInventory } from './fixtures/cleanup-inventory';
 import { cleanupIam } from './fixtures/cleanup-iam';
+import { reservationFixtures } from './fixtures/reservation-order';
 
 describe('INV-002/003/004/009 PostgreSQL contention, 20 rounds', () => {
   let prisma: PrismaService, reconciliation: ReconciliationService;
@@ -113,11 +114,16 @@ describe('INV-002/003/004/009 PostgreSQL contention, 20 rounds', () => {
     it(`round ${round}: 100 contenders`, async () => {
       const id = await variant();
       await stock(id);
+      const inputs = await reservationFixtures(
+        prisma,
+        Array.from({ length: 100 }, () => ({
+          ...selection(),
+          items: [{ variantId: id, quantity: '1' }],
+        })),
+      );
       const results = await Promise.allSettled(
-        Array.from({ length: 100 }, () =>
-          withTransactionRetry(prisma, (tx) =>
-            reservations.reserve(tx, { ...selection(), items: [{ variantId: id, quantity: '1' }] }),
-          ),
+        inputs.map((input) =>
+          withTransactionRetry(prisma, (tx) => reservations.reserve(tx, input)),
         ),
       );
       const successful = results
@@ -164,17 +170,19 @@ describe('INV-002/003/004/009 PostgreSQL contention, 20 rounds', () => {
       const ids = [await variant(), await variant()];
       for (const id of ids) await stock(id);
       const references = Array.from({ length: 10 }, () => randomUUID());
+      const inputs = await reservationFixtures(
+        prisma,
+        references.map((referenceId, index) => ({
+          ...selection(referenceId),
+          items: (index % 2 ? [...ids].reverse() : ids).map((variantId) => ({
+            variantId,
+            quantity: '1',
+          })),
+        })),
+      );
       const held = await Promise.allSettled(
-        references.map((referenceId, index) =>
-          withTransactionRetry(prisma, (tx) =>
-            reservations.reserve(tx, {
-              ...selection(referenceId),
-              items: (index % 2 ? [...ids].reverse() : ids).map((variantId) => ({
-                variantId,
-                quantity: '1',
-              })),
-            }),
-          ),
+        inputs.map((input) =>
+          withTransactionRetry(prisma, (tx) => reservations.reserve(tx, input)),
         ),
       );
       expect(held.filter((result) => result.status === 'rejected')).toEqual([]);

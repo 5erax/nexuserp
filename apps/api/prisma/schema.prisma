@@ -24,6 +24,7 @@ model Organization {
   products          Product[]
   documentSequences DocumentSequence[]
   idempotencyKeys   IdempotencyKey[]
+  outboxEvents      OutboxEvent[]
 
   @@map("organizations")
 }
@@ -40,6 +41,8 @@ model Branch {
   userAccess     UserBranchAccess[]
   auditLogs      AuditLog[]
   warehouses     Warehouse[]
+  customers      Customer[]
+  salesOrders    SalesOrder[]
 
   @@unique([organizationId, code])
   @@unique([organizationId, id])
@@ -63,6 +66,11 @@ model User {
   auditLogs           AuditLog[]
   stockMovements      StockMovement[]
   adjustmentsCreated  StockAdjustment[]  @relation("AdjustmentCreator")
+  customersCreated    Customer[]
+  salesOrdersCreated  SalesOrder[]
+  shipmentsCreated    Shipment[]
+  orderEvents         OrderEvent[]
+  paymentsCreated     Payment[]
   adjustmentsApproved StockAdjustment[]  @relation("AdjustmentApprover")
   idempotencyKeys     IdempotencyKey[]
 
@@ -228,6 +236,7 @@ model ProductVariant {
   balances          StockBalance[]
   movements         StockMovement[]
   adjustmentItems   StockAdjustmentItem[]
+  salesOrderItems   SalesOrderItem[]
 
   @@unique([organizationId, id])
   @@unique([organizationId, sku])
@@ -249,6 +258,7 @@ model Warehouse {
   balances       StockBalance[]
   movements      StockMovement[]
   adjustments    StockAdjustment[]
+  salesOrders    SalesOrder[]
 
   @@unique([organizationId, id])
   @@unique([organizationId, branchId, id])
@@ -279,19 +289,22 @@ model StockBalance {
 }
 
 model StockReservation {
-  id             String       @id @default(uuid()) @db.Uuid
-  organizationId String       @map("organization_id") @db.Uuid
-  balanceId      String       @map("balance_id") @db.Uuid
-  referenceId    String       @map("reference_id") @db.Uuid
-  quantity       Decimal      @db.Decimal(18, 3)
-  status         String       @default("ACTIVE") @db.VarChar(16)
-  createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt      DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
-  balance        StockBalance @relation(fields: [organizationId, balanceId], references: [organizationId, id], onDelete: Restrict)
+  id             String          @id @default(uuid()) @db.Uuid
+  organizationId String          @map("organization_id") @db.Uuid
+  balanceId      String          @map("balance_id") @db.Uuid
+  referenceId    String          @map("reference_id") @db.Uuid
+  orderItemId    String?         @map("order_item_id") @db.Uuid
+  quantity       Decimal         @db.Decimal(18, 3)
+  status         String          @default("ACTIVE") @db.VarChar(16)
+  createdAt      DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime        @updatedAt @map("updated_at") @db.Timestamptz(3)
+  balance        StockBalance    @relation(fields: [organizationId, balanceId], references: [organizationId, id], onDelete: Restrict)
+  orderItem      SalesOrderItem? @relation(fields: [organizationId, orderItemId], references: [organizationId, id], onDelete: Restrict)
 
   @@unique([organizationId, balanceId, referenceId])
   @@index([organizationId, balanceId, status])
   @@index([organizationId, referenceId])
+  @@index([organizationId, orderItemId])
   @@map("stock_reservations")
 }
 
@@ -387,4 +400,177 @@ model IdempotencyKey {
   @@unique([organizationId, actorId, command, key])
   @@index([expiresAt])
   @@map("idempotency_keys")
+}
+
+model Customer {
+  id             String       @id @default(uuid()) @db.Uuid
+  organizationId String       @map("organization_id") @db.Uuid
+  branchId       String       @map("branch_id") @db.Uuid
+  createdBy      String       @map("created_by") @db.Uuid
+  name           String       @db.VarChar(200)
+  email          String?      @db.VarChar(254)
+  phone          String?      @db.VarChar(32)
+  address        String?      @db.VarChar(1000)
+  notes          String?      @db.VarChar(2000)
+  status         String       @default("ACTIVE") @db.VarChar(16)
+  createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
+  branch         Branch       @relation(fields: [organizationId, branchId], references: [organizationId, id], onDelete: Restrict)
+  creator        User         @relation(fields: [organizationId, createdBy], references: [organizationId, id], onDelete: Restrict)
+  orders         SalesOrder[]
+
+  @@unique([organizationId, id])
+  @@unique([organizationId, branchId, id])
+  @@index([organizationId, branchId, name])
+  @@map("customers")
+}
+
+model SalesOrder {
+  id             String           @id @default(uuid()) @db.Uuid
+  organizationId String           @map("organization_id") @db.Uuid
+  branchId       String           @map("branch_id") @db.Uuid
+  warehouseId    String           @map("warehouse_id") @db.Uuid
+  customerId     String           @map("customer_id") @db.Uuid
+  createdBy      String           @map("created_by") @db.Uuid
+  orderNumber    String           @map("order_number") @db.VarChar(32)
+  status         String           @default("DRAFT") @db.VarChar(16)
+  currency       String           @default("VND") @db.VarChar(3)
+  subtotal       Decimal          @default(0) @db.Decimal(20, 0)
+  discountType   String           @default("NONE") @map("discount_type") @db.VarChar(16)
+  discountValue  Decimal          @default(0) @map("discount_value") @db.Decimal(20, 3)
+  discountTotal  Decimal          @default(0) @map("discount_total") @db.Decimal(20, 0)
+  taxTotal       Decimal          @default(0) @map("tax_total") @db.Decimal(20, 0)
+  grandTotal     Decimal          @default(0) @map("grand_total") @db.Decimal(20, 0)
+  note           String?          @db.VarChar(2000)
+  version        Int              @default(0)
+  createdAt      DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
+  branch         Branch           @relation(fields: [organizationId, branchId], references: [organizationId, id], onDelete: Restrict)
+  warehouse      Warehouse        @relation(fields: [organizationId, branchId, warehouseId], references: [organizationId, branchId, id], onDelete: Restrict)
+  customer       Customer         @relation(fields: [organizationId, branchId, customerId], references: [organizationId, branchId, id], onDelete: Restrict)
+  creator        User             @relation(fields: [organizationId, createdBy], references: [organizationId, id], onDelete: Restrict)
+  items          SalesOrderItem[]
+  shipments      Shipment[]
+  events         OrderEvent[]
+  payments       Payment[]
+
+  @@unique([organizationId, id])
+  @@unique([organizationId, branchId, id])
+  @@unique([organizationId, orderNumber])
+  @@index([organizationId, branchId, status, createdAt, id])
+  @@index([organizationId, createdBy])
+  @@map("sales_orders")
+}
+
+model SalesOrderItem {
+  id                String             @id @default(uuid()) @db.Uuid
+  organizationId    String             @map("organization_id") @db.Uuid
+  orderId           String             @map("order_id") @db.Uuid
+  variantId         String             @map("variant_id") @db.Uuid
+  sku               String             @db.VarChar(64)
+  productName       String             @map("product_name") @db.VarChar(200)
+  quantity          Decimal            @db.Decimal(18, 3)
+  unitPrice         Decimal            @map("unit_price") @db.Decimal(20, 0)
+  lineTotal         Decimal            @map("line_total") @db.Decimal(20, 0)
+  deliveredQuantity Decimal            @default(0) @map("delivered_quantity") @db.Decimal(18, 3)
+  createdAt         DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt         DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
+  order             SalesOrder         @relation(fields: [organizationId, orderId], references: [organizationId, id], onDelete: Restrict)
+  variant           ProductVariant     @relation(fields: [organizationId, variantId], references: [organizationId, id], onDelete: Restrict)
+  reservations      StockReservation[]
+  shipmentItems     ShipmentItem[]
+
+  @@unique([organizationId, id])
+  @@unique([organizationId, orderId, id])
+  @@unique([organizationId, orderId, variantId])
+  @@index([organizationId, variantId])
+  @@map("sales_order_items")
+}
+
+model Shipment {
+  id             String         @id @default(uuid()) @db.Uuid
+  organizationId String         @map("organization_id") @db.Uuid
+  orderId        String         @map("order_id") @db.Uuid
+  createdBy      String         @map("created_by") @db.Uuid
+  status         String         @default("DRAFT") @db.VarChar(16)
+  postedAt       DateTime?      @map("posted_at") @db.Timestamptz(3)
+  createdAt      DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
+  order          SalesOrder     @relation(fields: [organizationId, orderId], references: [organizationId, id], onDelete: Restrict)
+  creator        User           @relation(fields: [organizationId, createdBy], references: [organizationId, id], onDelete: Restrict)
+  items          ShipmentItem[]
+
+  @@unique([organizationId, orderId, id])
+  @@unique([organizationId, orderId], where: raw("(((status)::text = 'DRAFT'::text) OR ((status)::text = 'POSTED'::text))"), map: "shipments_one_active_per_order")
+  @@index([organizationId, createdAt])
+  @@map("shipments")
+}
+
+model ShipmentItem {
+  id             String         @id @default(uuid()) @db.Uuid
+  organizationId String         @map("organization_id") @db.Uuid
+  shipmentId     String         @map("shipment_id") @db.Uuid
+  orderId        String         @map("order_id") @db.Uuid
+  orderItemId    String         @map("order_item_id") @db.Uuid
+  quantity       Decimal        @db.Decimal(18, 3)
+  shipment       Shipment       @relation(fields: [organizationId, orderId, shipmentId], references: [organizationId, orderId, id], onDelete: Restrict)
+  orderItem      SalesOrderItem @relation(fields: [organizationId, orderId, orderItemId], references: [organizationId, orderId, id], onDelete: Restrict)
+
+  @@unique([organizationId, shipmentId, orderItemId])
+  @@map("shipment_items")
+}
+
+model OrderEvent {
+  id             String     @id @default(uuid()) @db.Uuid
+  organizationId String     @map("organization_id") @db.Uuid
+  orderId        String     @map("order_id") @db.Uuid
+  actorId        String?    @map("actor_id") @db.Uuid
+  action         String     @db.VarChar(100)
+  requestId      String     @map("request_id") @db.VarChar(64)
+  payload        Json       @db.JsonB
+  createdAt      DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
+  order          SalesOrder @relation(fields: [organizationId, orderId], references: [organizationId, id], onDelete: Restrict)
+  actor          User?      @relation(fields: [organizationId, actorId], references: [organizationId, id], onDelete: Restrict)
+
+  @@index([organizationId, orderId, createdAt, id])
+  @@map("order_events")
+}
+
+model Payment {
+  id                String     @id @default(uuid()) @db.Uuid
+  organizationId    String     @map("organization_id") @db.Uuid
+  salesOrderId      String     @map("sales_order_id") @db.Uuid
+  createdBy         String     @map("created_by") @db.Uuid
+  amount            Decimal    @db.Decimal(20, 0)
+  method            String     @db.VarChar(16)
+  externalReference String?    @map("external_reference") @db.VarChar(200)
+  reason            String     @db.VarChar(1000)
+  receivedAt        DateTime   @map("received_at") @db.Timestamptz(3)
+  createdAt         DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
+  order             SalesOrder @relation(fields: [organizationId, salesOrderId], references: [organizationId, id], onDelete: Restrict)
+  creator           User       @relation(fields: [organizationId, createdBy], references: [organizationId, id], onDelete: Restrict)
+
+  @@unique([organizationId, method, externalReference], where: raw("(external_reference IS NOT NULL)"), map: "payments_unique_external_reference")
+  @@index([organizationId, salesOrderId, createdAt, id])
+  @@map("payments")
+}
+
+model OutboxEvent {
+  id             String       @id @default(uuid()) @db.Uuid
+  organizationId String       @map("organization_id") @db.Uuid
+  eventType      String       @map("event_type") @db.VarChar(100)
+  aggregateId    String       @map("aggregate_id") @db.Uuid
+  payload        Json         @db.JsonB
+  status         String       @default("PENDING") @db.VarChar(16)
+  attempts       Int          @default(0)
+  availableAt    DateTime     @default(now()) @map("available_at") @db.Timestamptz(3)
+  lockedUntil    DateTime?    @map("locked_until") @db.Timestamptz(3)
+  lockToken      String?      @map("lock_token") @db.Uuid
+  publishedAt    DateTime?    @map("published_at") @db.Timestamptz(3)
+  lastError      String?      @map("last_error") @db.VarChar(200)
+  createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+
+  @@index([availableAt, id], where: raw("(published_at IS NULL)"), map: "outbox_events_unpublished")
+  @@map("outbox_events")
 }

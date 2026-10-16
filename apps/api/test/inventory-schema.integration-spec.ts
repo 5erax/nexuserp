@@ -5,6 +5,7 @@ import { parseEnvironment } from '../src/config/environment';
 import { PasswordService } from '../src/modules/iam/application/password.service';
 import { cleanupIam } from './fixtures/cleanup-iam';
 import { cleanupInventory } from './fixtures/cleanup-inventory';
+import { reservationFixture } from './fixtures/reservation-order';
 describe('Catalog and Inventory PostgreSQL constraints', () => {
   let prisma: PrismaService;
   const org = randomUUID(),
@@ -259,11 +260,18 @@ describe('Catalog and Inventory PostgreSQL constraints', () => {
     });
     expect(inbound.unitCost?.toFixed(6)).toBe('123.123456');
   });
-  it('reservations enforce quantity and organization without a Sales reference', async () => {
+  it('reservations enforce quantity, organization and an ACTIVE Sales reference', async () => {
+    const linked = await reservationFixture(prisma, {
+      organizationId: org,
+      warehouseId: warehouse,
+      referenceId: randomUUID(),
+      items: [{ variantId: variant, quantity: '1.125' }],
+    });
     const input = {
       organizationId: org,
       balanceId: balance,
-      referenceId: randomUUID(),
+      referenceId: linked.referenceId,
+      orderItemId: linked.items[0]!.orderItemId,
       quantity: '1.125',
     };
     await prisma.stockReservation.create({ data: input });
@@ -272,6 +280,8 @@ describe('Catalog and Inventory PostgreSQL constraints', () => {
       { ...input, referenceId: randomUUID(), quantity: '0' },
       { ...input, referenceId: randomUUID(), quantity: '-1' },
       { ...input, referenceId: randomUUID(), status: 'UNKNOWN' },
+      { ...input, referenceId: randomUUID(), orderItemId: null },
+      { ...input, referenceId: randomUUID(), orderItemId: randomUUID() },
       { ...input, organizationId: other, referenceId: randomUUID() },
     ])
       await expect(prisma.stockReservation.create({ data })).rejects.toThrow();

@@ -274,25 +274,28 @@ export class CatalogService {
     try {
       return await this.prisma.$transaction(async (tx) => {
         await this.manage(tx, actor);
-        // Block concurrent movement FK inserts until the history check and SKU update commit.
+        // Block concurrent movement/order-line FK inserts until the history check and SKU update commit.
         await tx.$queryRaw`SELECT id FROM product_variants WHERE organization_id=${actor.organizationId}::uuid AND id=${id}::uuid FOR UPDATE`;
         const existing = await tx.productVariant.findFirst({
           where: { organizationId: actor.organizationId, id },
           include: includeProduct,
         });
         if (!existing) throw new NotFoundException();
-        // shortcut: Add order-item history when Sales tables arrive in Phase 3 (#58).
         if (
           input.sku !== undefined &&
           input.sku !== existing.sku &&
-          (await tx.stockMovement.findFirst({
+          ((await tx.stockMovement.findFirst({
             where: { organizationId: actor.organizationId, variantId: id },
             select: { id: true },
-          }))
+          })) ||
+            (await tx.salesOrderItem.findFirst({
+              where: { organizationId: actor.organizationId, variantId: id },
+              select: { id: true },
+            })))
         )
           throw new ConflictException({
             code: 'SKU_HAS_HISTORY',
-            message: 'Không thể đổi SKU đã có lịch sử kho',
+            message: 'Không thể đổi SKU đã có lịch sử kho hoặc đơn bán',
           });
         const data = variantData(
           await tx.productVariant.update({ where: { id }, data: input, include: includeProduct }),

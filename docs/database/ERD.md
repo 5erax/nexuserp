@@ -177,7 +177,7 @@ erDiagram
     }
 ```
 
-Phase 2 chưa có order_item_id/FK trong reservation. Phase 3 thêm nullable order_item_id, composite FK cùng organization và CHECK ACTIVE bắt buộc có liên kết sau preflight; lịch sử RELEASED/CONSUMED cũ được giữ. Xem [kế hoạch migration](RESERVATION_MIGRATION_PLAN.md).
+Migration Phase 2 ban đầu chưa có order_item_id/FK. Migration Phase 3 20261016040000_crm_sales thêm nullable order_item_id, composite FK cùng organization và CHECK ACTIVE bắt buộc có liên kết sau preflight; lịch sử RELEASED/CONSUMED cũ được giữ. Xem [kế hoạch migration](RESERVATION_MIGRATION_PLAN.md).
 
 ## CRM, Sales và Finance tối giản — Phase 3
 
@@ -289,3 +289,97 @@ erDiagram
 ```
 
 Reporting Phase 4 đọc aggregate qua interface module và filter scope trước SUM/COUNT; chưa cần bảng materialized/copy dữ liệu. Outbox dispatcher SKIP LOCKED, retry bounded, event id làm idempotency ở consumer. Không coi delivery là exactly-once.
+
+## CRM, Sales, Finance và outbox — schema Phase 3
+
+```mermaid
+erDiagram
+    BRANCHES ||--o{ CUSTOMERS : owns
+    BRANCHES ||--o{ SALES_ORDERS : owns
+    WAREHOUSES ||--o{ SALES_ORDERS : snapshot
+    CUSTOMERS ||--o{ SALES_ORDERS : buys
+    SALES_ORDERS ||--o{ SALES_ORDER_ITEMS : contains
+    PRODUCT_VARIANTS ||--o{ SALES_ORDER_ITEMS : snapshot_source
+    SALES_ORDER_ITEMS |o--o{ STOCK_RESERVATIONS : order_item_id
+    SALES_ORDERS ||--o{ SHIPMENTS : fulfills
+    SHIPMENTS ||--o{ SHIPMENT_ITEMS : contains
+    SALES_ORDER_ITEMS ||--o{ SHIPMENT_ITEMS : same_order
+    SALES_ORDERS ||--o{ ORDER_EVENTS : history
+    SALES_ORDERS ||--o{ PAYMENTS : receipts
+    ORGANIZATIONS ||--o{ OUTBOX_EVENTS : publishes
+    CUSTOMERS {
+        uuid id PK
+        uuid organization_id FK
+        uuid branch_id FK
+        varchar name
+        varchar status
+    }
+    SALES_ORDERS {
+        uuid id PK
+        uuid organization_id FK
+        uuid branch_id FK
+        uuid warehouse_id FK
+        uuid customer_id FK
+        varchar order_number "org unique"
+        varchar status
+        decimal subtotal
+        decimal discount_total
+        decimal grand_total
+        int version
+    }
+    SALES_ORDER_ITEMS {
+        uuid id PK
+        uuid organization_id FK
+        uuid order_id FK
+        uuid variant_id FK
+        varchar sku "snapshot"
+        varchar product_name "snapshot"
+        decimal unit_price "snapshot"
+        decimal quantity
+        decimal delivered_quantity
+        decimal line_total
+    }
+    SHIPMENTS {
+        uuid id PK
+        uuid organization_id FK
+        uuid order_id FK
+        varchar status "one DRAFT or POSTED per order"
+        timestamptz posted_at
+    }
+    SHIPMENT_ITEMS {
+        uuid id PK
+        uuid shipment_id FK
+        uuid order_id FK
+        uuid order_item_id FK
+        decimal quantity
+    }
+    ORDER_EVENTS {
+        uuid id PK
+        uuid order_id FK
+        uuid actor_id FK
+        varchar action
+        jsonb payload
+        timestamptz created_at
+    }
+    PAYMENTS {
+        uuid id PK
+        uuid sales_order_id FK
+        decimal amount
+        varchar method
+        varchar external_reference "nullable, org-method unique"
+        timestamptz received_at
+    }
+    OUTBOX_EVENTS {
+        uuid id PK
+        uuid organization_id FK
+        uuid aggregate_id
+        varchar status
+        int attempts
+        timestamptz locked_until
+        uuid lock_token
+        timestamptz available_at
+        timestamptz published_at
+    }
+```
+
+Mọi FK nghiệp vụ ghép organization; warehouse/customer của order còn ghép branch, shipment item ghép order để không gắn dòng của đơn khác. Reservation ACTIVE phải có order_item_id; lịch sử terminal Phase 2 có thể NULL. Header order và dòng snapshot bất biến sau confirm, trừ delivered_quantity được tăng khi CONFIRMED; order terminal, shipment committed, payment và order event được trigger bảo vệ. Tổng tiền/giá VND là Numeric(20,0), quantity Numeric(18,3); application vẫn phải kiểm tra tổng liên bảng, scope và trạng thái nghiệp vụ. Lease outbox phục vụ dispatcher #67 sau commit; schema không tự phát sự kiện hoặc gửi thông báo.

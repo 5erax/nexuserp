@@ -14,6 +14,7 @@ import { AuthService, type RequestAudit } from '../../iam/application/auth.servi
 import { scopeFilter, type Actor } from '../../iam/application/access-scope';
 import { AuditService } from '../../audit/application/audit.service';
 import { OrdersService } from '../../sales/application/orders.service';
+import { OrganizationService } from '../../iam/application/organization.service';
 
 type Input = {
   name: string;
@@ -60,6 +61,7 @@ export class CustomersService {
     private readonly auth: AuthService,
     private readonly audit: AuditService,
     private readonly sales: OrdersService,
+    private readonly organization: OrganizationService,
   ) {}
   private scope(actor: Actor, permission: Permission) {
     if (!actor.grants[permission]?.some((scope) => scope === 'ORG' || scope === 'BRANCH'))
@@ -129,15 +131,9 @@ export class CustomersService {
     permission: Permission,
     target: { id: string } | { branchId: string },
   ) {
-    await tx.$queryRaw`SELECT id FROM organizations WHERE id = ${actor.organizationId}::uuid FOR SHARE`;
+    const current = await this.auth.lockActor(tx, actor);
     if ('id' in target)
       await tx.$queryRaw`SELECT id FROM customers WHERE organization_id = ${actor.organizationId}::uuid AND id = ${target.id}::uuid FOR NO KEY UPDATE`;
-    const current = await this.auth.actorForFamily(tx, {
-      sub: actor.id,
-      organizationId: actor.organizationId,
-      familyId: actor.familyId,
-    });
-    if (current.mustChangePassword) throw new ForbiddenException();
     const scope = this.scope(current, permission);
     if ('id' in target) {
       if (
@@ -147,15 +143,14 @@ export class CustomersService {
         }))
       )
         throw new NotFoundException();
-    } else if (
-      (!current.grants[permission]?.includes('ORG') &&
-        !current.branchIds.includes(target.branchId.toLowerCase())) ||
-      !(await tx.branch.findFirst({
-        where: { organizationId: actor.organizationId, id: target.branchId },
-        select: { id: true },
-      }))
-    )
-      throw new NotFoundException();
+    } else {
+      if (
+        !current.grants[permission]?.includes('ORG') &&
+        !current.branchIds.includes(target.branchId.toLowerCase())
+      )
+        throw new NotFoundException();
+      await this.organization.lockBranch(tx, actor.organizationId, target.branchId);
+    }
   }
   private record(
     tx: Prisma.TransactionClient,
@@ -186,9 +181,7 @@ export class CustomersService {
       input,
       (tx) => this.authorize(tx, actor, 'crm.customers.create', { branchId: input.branchId }),
       async (tx) => {
-        const branch = await tx.branch.findFirstOrThrow({
-          where: { organizationId: actor.organizationId, id: input.branchId },
-        });
+        const branch = await this.organization.lockBranch(tx, actor.organizationId, input.branchId);
         if (branch.status !== 'ACTIVE')
           throw new ConflictException({
             code: 'BRANCH_INACTIVE',

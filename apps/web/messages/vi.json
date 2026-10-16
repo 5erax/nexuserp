@@ -63,6 +63,7 @@
     "PRODUCT_INACTIVE": "Sản phẩm đã lưu trữ. Khôi phục sản phẩm trước khi thêm SKU.",
     "IDEMPOTENCY_KEY_REUSED": "Lệnh này đã hoàn tất với nội dung trước. Tải lại danh sách để kiểm tra kết quả.",
     "REQUEST_IN_PROGRESS": "Lệnh đang được xử lý. Chờ một chút rồi gửi lại cùng nội dung.",
+    "TRANSACTION_CONFLICT": "Dữ liệu đang được xử lý đồng thời. Chờ một chút rồi thử lại cùng nội dung.",
     "NOT_FOUND": "Không tìm thấy dữ liệu trong phạm vi truy cập của bạn.",
     "BRANCH_HAS_ACTIVE_USERS": "Cấp chi nhánh hoạt động khác cho nhân viên trước khi ngừng chi nhánh này.",
     "VALIDATION_ERROR": "Thông tin chưa hợp lệ. Kiểm tra lại các trường đã nhập.",

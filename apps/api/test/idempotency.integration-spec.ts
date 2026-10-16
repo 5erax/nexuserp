@@ -236,6 +236,24 @@ describe('Idempotent commands on PostgreSQL', () => {
     expect(await prisma.branch.count({ where: { organizationId } })).toBe(before);
     expect((await service.execute(key, plan())).replayed).toBe(false);
   });
+  it('retries an aborted conflict without duplicating the key or business write', async () => {
+    const key = identity(),
+      command = plan();
+    const before = await prisma.branch.count({ where: { organizationId } });
+    let attempts = 0;
+    const retried = new IdempotentCommand(command.input, command.authorize, async (tx) => {
+      const result = await command.run(tx);
+      if (++attempts === 1)
+        await tx.$executeRaw`DO $$ BEGIN RAISE EXCEPTION 'synthetic conflict' USING ERRCODE = '40001'; END $$`;
+      return result;
+    });
+    const first = await service.execute(key, retried);
+    expect(first.replayed).toBe(false);
+    expect(attempts).toBe(2);
+    expect(await prisma.branch.count({ where: { organizationId } })).toBe(before + 1);
+    expect(await prisma.idempotencyKey.count({ where: { organizationId, key: key.key } })).toBe(1);
+    expect(await service.execute(key, retried)).toEqual({ ...first, replayed: true });
+  });
   it('checks current resource scope before replaying a stored response', async () => {
     const key = identity();
     await service.execute(key, plan());

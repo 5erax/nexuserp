@@ -57,6 +57,7 @@ Batch cleanup chọn ID một lần bằng `WITH ... AS MATERIALIZED` rồi DELE
 | 409 | ORDER_HAS_PAYMENTS, PAYMENT_EXCEEDS_TOTAL, DUPLICATE_PAYMENT_REFERENCE | Không hủy đơn đã thu, thu vượt/trùng |
 | 409 | APPROVAL_REQUIRED, SELF_APPROVAL_FORBIDDEN | Adjustment cần người khác duyệt |
 | 409 | IDEMPOTENCY_KEY_REUSED, REQUEST_IN_PROGRESS | Key khác payload hoặc command đang chạy |
+| 409 | TRANSACTION_CONFLICT | Transaction bị hủy do tranh chấp sau tối đa ba lần thử; gửi lại cùng key/nội dung |
 | 422 | BUSINESS_RULE_VIOLATION, EXPORT_LIMIT_EXCEEDED | Input đúng kiểu nhưng vi phạm quy tắc |
 | 429 | RATE_LIMITED | Chờ Retry-After giây; không tăng retry dồn |
 | 413 | PAYLOAD_TOO_LARGE | JSON vượt 1 MiB; giảm kích thước request |

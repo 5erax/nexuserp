@@ -5,15 +5,21 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma, type SalesOrder } from '../../../generated/prisma/client';
+import type { Prisma, SalesOrder } from '../../../generated/prisma/client';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
 import { withTransactionRetry } from '../../../infrastructure/prisma/transaction';
 import { IdempotentCommand } from '../../../common/idempotency/command';
 import { ListResult } from '../../../common/pagination';
+import { nextSalesOrderNumber } from '../../../common/sales-order-number';
 import { AuthService, type RequestAudit } from '../../iam/application/auth.service';
 import { scopeFilter, type Actor } from '../../iam/application/access-scope';
 import { AuditService } from '../../audit/application/audit.service';
 import { WarehousesService } from '../../inventory/application/warehouses.service';
+import { ReservationsService } from '../../inventory/application/reservations.service';
+import { OrganizationService } from '../../iam/application/organization.service';
+import { CatalogService } from '../../catalog/application/catalog.service';
+import { CustomerDirectoryService } from '../../crm/application/customer-directory.service';
+import { PaymentReadsService } from '../../finance/application/payment-reads.service';
 import { calculatePrice, type Discount } from './price-calculator';
 import { OrderStatePolicy } from '../domain/order-state-policy';
 import { OrderRuleError } from '../domain/order-rule-error';
@@ -36,8 +42,7 @@ type Query = {
   createdFrom?: string;
   createdTo?: string;
 };
-const customer = { select: { name: true } } as const;
-const include = { customer, items: { orderBy: { id: 'asc' as const } } } as const;
+const include = { items: { orderBy: { id: 'asc' as const } } } as const;
 type Document = Prisma.SalesOrderGetPayload<{ include: typeof include }>;
 const lineState = (item: Document['items'][number]) => ({
   variantId: item.variantId,
@@ -48,7 +53,7 @@ const lineState = (item: Document['items'][number]) => ({
   lineTotal: item.lineTotal.toFixed(0),
   deliveredQuantity: item.deliveredQuantity.toFixed(3),
 });
-const summary = (doc: SalesOrder & { customer: { name: string } }, itemCount: number) => ({
+const summary = (doc: SalesOrder, itemCount: number, customerName: string) => ({
   id: doc.id,
   orderNumber: doc.orderNumber,
   status: doc.status,
@@ -56,7 +61,7 @@ const summary = (doc: SalesOrder & { customer: { name: string } }, itemCount: nu
   branchId: doc.branchId,
   warehouseId: doc.warehouseId,
   customerId: doc.customerId,
-  customerName: doc.customer.name,
+  customerName,
   createdBy: doc.createdBy,
   subtotal: doc.subtotal.toFixed(0),
   discountType: doc.discountType,
@@ -70,8 +75,8 @@ const summary = (doc: SalesOrder & { customer: { name: string } }, itemCount: nu
   createdAt: doc.createdAt.toISOString(),
   updatedAt: doc.updatedAt.toISOString(),
 });
-const data = (doc: Document) => ({
-  ...summary(doc, doc.items.length),
+const data = (doc: Document, customerName: string) => ({
+  ...summary(doc, doc.items.length, customerName),
   items: doc.items.map((item) => ({
     id: item.id,
     ...lineState(item),
@@ -86,6 +91,11 @@ export class OrdersService {
     private readonly auth: AuthService,
     private readonly audit: AuditService,
     private readonly warehouses: WarehousesService,
+    private readonly reservations: ReservationsService,
+    private readonly organization: OrganizationService,
+    private readonly catalog: CatalogService,
+    private readonly customers: CustomerDirectoryService,
+    private readonly payments: PaymentReadsService,
   ) {}
   private scope(actor: Actor, permission: Permission) {
     if (!actor.grants[permission]?.length) throw new ForbiddenException();
@@ -118,31 +128,37 @@ export class OrdersService {
         ...(q
           ? [
               {
-                OR: [
-                  { orderNumber: { contains: q, mode: 'insensitive' as const } },
-                  { customer: { name: { contains: q, mode: 'insensitive' as const } } },
-                ],
+                orderNumber: { contains: q, mode: 'insensitive' as const },
               },
             ]
           : []),
       ],
     };
-    const [rows, count] = await this.prisma.$transaction(
-      [
-        this.prisma.salesOrder.findMany({
+    return this.prisma.$transaction(
+      async (tx) => {
+        const rows = await tx.salesOrder.findMany({
           where,
-          include: { customer, _count: { select: { items: true } } },
+          include: { _count: { select: { items: true } } },
           orderBy: [{ createdAt: query.sortOrder }, { id: query.sortOrder }],
           skip: (query.page - 1) * query.pageSize,
           take: query.pageSize,
-        }),
-        this.prisma.salesOrder.count({ where }),
-      ],
+        });
+        const count = await tx.salesOrder.count({ where });
+        const names = new Map(
+          (
+            await this.customers.names(
+              tx,
+              actor.organizationId,
+              rows.map((row) => row.customerId),
+            )
+          ).map((row) => [row.id, row.name]),
+        );
+        return new ListResult(
+          rows.map((row) => summary(row, row._count.items, names.get(row.customerId)!)),
+          { page: query.page, pageSize: query.pageSize, total: count },
+        );
+      },
       { isolationLevel: 'RepeatableRead' },
-    );
-    return new ListResult(
-      rows.map((row) => summary(row, row._count.items)),
-      { page: query.page, pageSize: query.pageSize, total: count },
     );
   }
   async detail(actor: Actor, id: string) {
@@ -151,7 +167,10 @@ export class OrdersService {
       include,
     });
     if (!doc) throw new NotFoundException();
-    return data(doc);
+    const [customer] = await this.customers.names(this.prisma, actor.organizationId, [
+      doc.customerId,
+    ]);
+    return data(doc, customer!.name);
   }
   private async authorize(
     tx: Prisma.TransactionClient,
@@ -159,15 +178,9 @@ export class OrdersService {
     permission: Permission,
     target: { branchId: string } | { id: string },
   ) {
-    await tx.$queryRaw`SELECT id FROM organizations WHERE id = ${actor.organizationId}::uuid FOR SHARE`;
+    const current = await this.auth.lockActor(tx, actor);
     if ('id' in target)
       await tx.$queryRaw`SELECT id FROM sales_orders WHERE organization_id = ${actor.organizationId}::uuid AND id = ${target.id}::uuid FOR UPDATE`;
-    const current = await this.auth.actorForFamily(tx, {
-      sub: actor.id,
-      organizationId: actor.organizationId,
-      familyId: actor.familyId,
-    });
-    if (current.mustChangePassword) throw new ForbiddenException();
     const scope = this.scope(current, permission);
     if ('id' in target) {
       if (
@@ -177,15 +190,14 @@ export class OrdersService {
         }))
       )
         throw new NotFoundException();
-    } else if (
-      (!current.grants[permission]?.includes('ORG') &&
-        !current.branchIds.includes(target.branchId.toLowerCase())) ||
-      !(await tx.branch.findFirst({
-        where: { organizationId: actor.organizationId, id: target.branchId },
-        select: { id: true },
-      }))
-    )
-      throw new NotFoundException();
+    } else {
+      if (
+        !current.grants[permission]?.includes('ORG') &&
+        !current.branchIds.includes(target.branchId.toLowerCase())
+      )
+        throw new NotFoundException();
+      await this.organization.lockBranch(tx, actor.organizationId, target.branchId);
+    }
   }
   private async snapshots(
     tx: Prisma.TransactionClient,
@@ -199,23 +211,13 @@ export class OrdersService {
         code: 'INVALID_ORDER_ITEMS',
         message: 'Đơn phải có từ 1 đến 100 biến thể khác nhau',
       });
-    const [client] = await tx.$queryRaw<
-      { id: string; status: string }[]
-    >`SELECT id,status FROM customers WHERE organization_id = ${actor.organizationId}::uuid AND branch_id = ${branchId}::uuid AND id = ${input.customerId}::uuid FOR SHARE`;
-    if (!client) throw new NotFoundException();
-    if (client.status !== 'ACTIVE')
-      throw conflict('CUSTOMER_INACTIVE', 'Khách hàng đã ngừng hoạt động');
-    // Catalog writes lock these rows, so every line snapshots one committed catalog version.
-    await tx.$queryRaw(
-      Prisma.sql`SELECT v.id FROM product_variants v JOIN products p ON p.organization_id = v.organization_id AND p.id = v.product_id WHERE v.organization_id = ${actor.organizationId}::uuid AND v.id IN (${Prisma.join(ids.map((id) => Prisma.sql`${id}::uuid`))}) ORDER BY p.id,v.id FOR SHARE OF p,v`,
+    const client = await this.customers.lockActive(
+      tx,
+      actor.organizationId,
+      branchId,
+      input.customerId,
     );
-    const variants = await tx.productVariant.findMany({
-      where: { organizationId: actor.organizationId, id: { in: ids } },
-      include: { product: { select: { name: true, status: true } } },
-    });
-    if (variants.length !== ids.length) throw new NotFoundException();
-    if (variants.some((v) => v.status !== 'ACTIVE' || v.product.status !== 'ACTIVE'))
-      throw conflict('PRODUCT_INACTIVE', 'Sản phẩm hoặc biến thể đã ngừng hoạt động');
+    const variants = await this.catalog.lockActiveVariants(tx, actor.organizationId, ids);
     const byId = new Map(variants.map((v) => [v.id, v]));
     const items = input.items.map((item, index) => {
       const variant = byId.get(ids[index]!)!;
@@ -223,8 +225,8 @@ export class OrdersService {
         variantId: variant.id,
         quantity: item.quantity,
         sku: variant.sku,
-        productName: variant.product.name,
-        unitPrice: variant.sellingPrice.toFixed(0),
+        productName: variant.productName,
+        unitPrice: variant.sellingPrice,
       };
     });
     const discount = input.discount ?? { type: 'NONE', value: '0' };
@@ -238,6 +240,7 @@ export class OrdersService {
     }
     const { lineTotals, ...totals } = price;
     return {
+      customerName: client.name,
       customerId: input.customerId,
       note: input.note ?? null,
       discountType: discount.type,
@@ -245,17 +248,6 @@ export class OrdersService {
       ...totals,
       items: { create: items.map((item, index) => ({ ...item, lineTotal: lineTotals[index]! })) },
     };
-  }
-  private async nextNumber(tx: Prisma.TransactionClient, organizationId: string) {
-    const [sequence] = await tx.$queryRaw<
-      { value: bigint; year: number }[]
-    >`INSERT INTO document_sequences (organization_id,kind,year,next_value)
-      SELECT id,'SO',EXTRACT(YEAR FROM CURRENT_TIMESTAMP AT TIME ZONE timezone)::integer,2 FROM organizations WHERE id = ${organizationId}::uuid
-      ON CONFLICT (organization_id,kind,year) DO UPDATE SET next_value = document_sequences.next_value + 1
-      WHERE document_sequences.next_value < 9223372036854775807
-      RETURNING next_value - 1 AS value,year`;
-    if (!sequence) throw conflict('ORDER_NUMBER_EXHAUSTED', 'Đã hết miền số đơn hàng');
-    return `SO-${sequence.year}-${sequence.value.toString().padStart(6, '0')}`;
   }
   private async record(
     tx: Prisma.TransactionClient,
@@ -333,35 +325,34 @@ export class OrdersService {
       input,
       (tx) => this.authorize(tx, actor, 'sales.orders.create', { branchId: input.branchId }),
       async (tx) => {
-        const warehouse = await tx.warehouse.findFirst({
-          where: {
-            organizationId: actor.organizationId,
-            branchId: input.branchId,
-            isDefault: true,
-            status: 'ACTIVE',
-          },
-          select: { id: true },
-        });
-        if (!warehouse)
-          throw conflict(
-            'BRANCH_WAREHOUSE_NOT_CONFIGURED',
-            'Chi nhánh chưa có kho mặc định hoạt động',
-          );
-        await this.warehouses.lockActive(tx, actor.organizationId, warehouse.id);
-        const snapshot = await this.snapshots(tx, actor, input.branchId, input);
+        const warehouse = await this.warehouses.lockDefault(
+          tx,
+          actor.organizationId,
+          input.branchId,
+        );
+        const { customerName, ...snapshot } = await this.snapshots(
+          tx,
+          actor,
+          input.branchId,
+          input,
+        );
         const doc = await tx.salesOrder.create({
           data: {
             organizationId: actor.organizationId,
             branchId: input.branchId,
             warehouseId: warehouse.id,
             createdBy: actor.id,
-            orderNumber: await this.nextNumber(tx, actor.organizationId),
+            orderNumber: await nextSalesOrderNumber(
+              tx,
+              actor.organizationId,
+              await this.organization.businessYear(tx, actor.organizationId),
+            ),
             ...snapshot,
           },
           include,
         });
         await this.record(tx, actor, doc, 'sales.order_created', context);
-        return data(doc);
+        return data(doc, customerName);
       },
     );
   }
@@ -378,24 +369,14 @@ export class OrdersService {
       const before = await tx.salesOrder.findUniqueOrThrow({ where: { id }, include });
       try {
         OrderStatePolicy.transition(before.status, 'UPDATE', {
-          hasPayments: Boolean(
-            await tx.payment.findFirst({
-              where: { organizationId: actor.organizationId, salesOrderId: id },
-              select: { id: true },
-            }),
-          ),
+          hasPayments: await this.payments.hasForOrder(tx, actor.organizationId, id),
           hasPostedShipment: Boolean(
             await tx.shipment.findFirst({
               where: { organizationId: actor.organizationId, orderId: id, status: 'POSTED' },
               select: { id: true },
             }),
           ),
-          hasReservations: Boolean(
-            await tx.stockReservation.findFirst({
-              where: { organizationId: actor.organizationId, orderItem: { orderId: id } },
-              select: { id: true },
-            }),
-          ),
+          hasReservations: await this.reservations.hasForOrder(tx, actor.organizationId, id),
         });
       } catch (error) {
         if (error instanceof OrderRuleError) throw conflict(error.code, error.message);
@@ -403,7 +384,7 @@ export class OrdersService {
       }
       if (before.version !== input.version)
         throw conflict('ORDER_VERSION_CONFLICT', 'Đơn đã được người khác sửa, hãy tải lại');
-      const snapshot = await this.snapshots(tx, actor, before.branchId, {
+      const { customerName, ...snapshot } = await this.snapshots(tx, actor, before.branchId, {
         customerId: input.customerId ?? before.customerId,
         items:
           input.items ??
@@ -426,7 +407,7 @@ export class OrdersService {
         include,
       });
       await this.record(tx, actor, doc, 'sales.order_updated', context, before);
-      return data(doc);
+      return data(doc, customerName);
     });
   }
 }

@@ -69,6 +69,30 @@ export class CatalogService {
     private readonly auth: AuthService,
     private readonly audit: AuditService,
   ) {}
+  async lockActiveVariants(tx: Prisma.TransactionClient, organizationId: string, ids: string[]) {
+    if (typeof Reflect.get(tx, '$connect') === 'function')
+      throw new Error('Catalog snapshots require a caller transaction');
+    // Freeze metadata and prices together until the caller persists its snapshot.
+    await tx.$queryRaw(
+      Prisma.sql`SELECT v.id FROM product_variants v JOIN products p ON p.organization_id = v.organization_id AND p.id = v.product_id WHERE v.organization_id = ${organizationId}::uuid AND v.id IN (${Prisma.join(ids.map((id) => Prisma.sql`${id}::uuid`))}) ORDER BY p.id,v.id FOR SHARE OF p,v`,
+    );
+    const rows = await tx.productVariant.findMany({
+      where: { organizationId, id: { in: ids } },
+      include: includeProduct,
+    });
+    if (rows.length !== ids.length) throw new NotFoundException();
+    if (rows.some((row) => row.status !== 'ACTIVE' || row.product.status !== 'ACTIVE'))
+      throw new ConflictException({
+        code: 'PRODUCT_INACTIVE',
+        message: 'Sản phẩm hoặc biến thể đã ngừng hoạt động',
+      });
+    return rows.map((row) => ({
+      id: row.id,
+      sku: row.sku,
+      productName: row.product.name,
+      sellingPrice: row.sellingPrice.toFixed(0),
+    }));
+  }
   private read(actor: Actor) {
     if (!actor.grants['catalog.products.read']?.includes('ORG')) throw new ForbiddenException();
   }

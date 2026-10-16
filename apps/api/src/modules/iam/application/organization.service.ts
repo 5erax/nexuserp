@@ -14,6 +14,22 @@ import type { RequestAudit } from './auth.service';
 type BranchInput = { code: string; name: string; status?: 'ACTIVE' | 'INACTIVE' };
 @Injectable()
 export class OrganizationService {
+  async lockBranch(tx: Prisma.TransactionClient, organizationId: string, id: string) {
+    if (typeof Reflect.get(tx, '$connect') === 'function')
+      throw new Error('Branch locking requires a caller transaction');
+    const [branch] = await tx.$queryRaw<
+      { id: string; status: string }[]
+    >`SELECT id,status FROM branches WHERE organization_id = ${organizationId}::uuid AND id = ${id}::uuid FOR SHARE`;
+    if (!branch) throw new NotFoundException();
+    return branch;
+  }
+  async businessYear(tx: Prisma.TransactionClient, organizationId: string) {
+    const [row] = await tx.$queryRaw<
+      { year: number }[]
+    >`SELECT EXTRACT(YEAR FROM CURRENT_TIMESTAMP AT TIME ZONE timezone)::integer AS year FROM organizations WHERE id = ${organizationId}::uuid`;
+    if (!row) throw new NotFoundException();
+    return row.year;
+  }
   constructor(
     private readonly prisma: PrismaService,
     private readonly policy: IamAdminPolicy,

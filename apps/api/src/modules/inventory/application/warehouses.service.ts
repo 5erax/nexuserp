@@ -258,6 +258,19 @@ export class WarehousesService {
       }
     });
   }
+  async lockDefault(tx: Prisma.TransactionClient, organizationId: string, branchId: string) {
+    if (typeof Reflect.get(tx, '$connect') === 'function')
+      throw new Error('Warehouse locking requires a caller transaction');
+    const [warehouse] = await tx.$queryRaw<
+      { id: string }[]
+    >`SELECT id FROM warehouses WHERE organization_id = ${organizationId}::uuid AND branch_id = ${branchId}::uuid AND is_default AND status = 'ACTIVE' FOR SHARE`;
+    if (!warehouse)
+      throw new ConflictException({
+        code: 'BRANCH_WAREHOUSE_NOT_CONFIGURED',
+        message: 'Chi nhánh chưa có kho mặc định hoạt động',
+      });
+    return this.lockActive(tx, organizationId, warehouse.id);
+  }
   async lockActive(tx: Prisma.TransactionClient, organizationId: string, id: string) {
     if (typeof Reflect.get(tx, '$connect') === 'function')
       throw new Error('Warehouse locking requires a caller transaction');

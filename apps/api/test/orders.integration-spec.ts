@@ -15,6 +15,12 @@ import { IdempotencyService } from '../src/common/idempotency/idempotency.servic
 import { OrdersService } from '../src/modules/sales/application/orders.service';
 import { StockLedgerService } from '../src/modules/inventory/application/stock-ledger.service';
 import { ReservationsService } from '../src/modules/inventory/application/reservations.service';
+import { WarehousesService } from '../src/modules/inventory/application/warehouses.service';
+import { OrganizationService } from '../src/modules/iam/application/organization.service';
+import { CatalogService } from '../src/modules/catalog/application/catalog.service';
+import { CustomerDirectoryService } from '../src/modules/crm/application/customer-directory.service';
+import { PaymentReadsService } from '../src/modules/finance/application/payment-reads.service';
+import { nextSalesOrderNumber } from '../src/common/sales-order-number';
 import { cleanupInventory } from './fixtures/cleanup-inventory';
 import { cleanupIam } from './fixtures/cleanup-iam';
 
@@ -242,6 +248,31 @@ describe('Sales draft orders, pricing and scoped lifecycle API', () => {
     expect(
       await prisma.stockReservation.count({ where: { organizationId: org, referenceId: doc.id } }),
     ).toBe(0);
+  });
+  it('requires caller transactions for locking public interfaces and document numbering', async () => {
+    const actor = await app.get(AuthService).actor(owner.accessToken);
+    await Promise.all([
+      expect(app.get(AuthService).lockActor(prisma, actor)).rejects.toThrow('caller transaction'),
+      expect(app.get(OrganizationService).lockBranch(prisma, org, branch)).rejects.toThrow(
+        'caller transaction',
+      ),
+      expect(app.get(CatalogService).lockActiveVariants(prisma, org, [variant])).rejects.toThrow(
+        'caller transaction',
+      ),
+      expect(
+        app.get(CustomerDirectoryService).lockActive(prisma, org, branch, customer),
+      ).rejects.toThrow('caller transaction'),
+      expect(app.get(WarehousesService).lockDefault(prisma, org, branch)).rejects.toThrow(
+        'caller transaction',
+      ),
+      expect(app.get(ReservationsService).hasForOrder(prisma, org, randomUUID())).rejects.toThrow(
+        'caller transaction',
+      ),
+      expect(app.get(PaymentReadsService).hasForOrder(prisma, org, randomUUID())).rejects.toThrow(
+        'caller transaction',
+      ),
+      expect(nextSalesOrderNumber(prisma, org, 2026)).rejects.toThrow('caller transaction'),
+    ]);
   });
   it('replays create without allocating a second number, event or audit', async () => {
     const key = randomUUID(),

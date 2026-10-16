@@ -6,6 +6,7 @@ import { CatalogController } from './presentation/catalog.controller';
 @Module({
   imports: [IamModule, AuditModule],
   providers: [CatalogService],
+  exports: [CatalogService],
   controllers: [CatalogController],
 })
 export class CatalogModule {}

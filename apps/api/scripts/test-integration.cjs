@@ -9,20 +9,30 @@ const env = { ...process.env, DATABASE_URL: databaseUrl, NODE_ENV: 'test' };
 const prisma = path.join(path.dirname(require.resolve('prisma/package.json')), 'build/index.js');
 const jest = require.resolve('jest/bin/jest');
 const suite = process.argv[2] ?? 'all';
-if (!['all', 'foundation', 'security'].includes(suite))
+if (!['all', 'foundation', 'security', 'inventory'].includes(suite))
   throw new Error('Unknown integration suite');
 const tests =
   suite === 'security'
     ? ['--testMatch=**/auth.integration-spec.ts', '--testMatch=**/users.integration-spec.ts']
-    : [
-        '--testMatch=**/*.integration-spec.ts',
-        ...(suite === 'foundation'
-          ? ['--testPathIgnorePatterns=auth.integration-spec|users.integration-spec']
-          : []),
-      ];
+    : suite === 'inventory'
+      ? ['--testMatch=**/stock-concurrency.integration-spec.ts']
+      : [
+          '--testMatch=**/*.integration-spec.ts',
+          ...(suite === 'foundation'
+            ? ['--testPathIgnorePatterns=auth.integration-spec|users.integration-spec']
+            : []),
+        ];
 for (const [file, args] of [
   [prisma, ['migrate', 'deploy']],
-  [jest, ['--runInBand', ...tests, '--coverage', '--coverageDirectory=coverage/integration']],
+  [
+    jest,
+    [
+      '--runInBand',
+      ...tests,
+      '--coverage',
+      `--coverageDirectory=coverage/${suite === 'inventory' ? 'inventory' : 'integration'}`,
+    ],
+  ],
 ]) {
   const result = spawnSync(process.execPath, [file, ...args], { env, stdio: 'inherit' });
   if (result.error) throw result.error;

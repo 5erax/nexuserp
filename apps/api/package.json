@@ -12,6 +12,8 @@
     "test:integration:foundation": "node scripts/test-integration.cjs foundation",
     "test:security": "node scripts/test-integration.cjs security",
     "test:security:mutation": "node scripts/check-scope-mutation.cjs",
+    "test:inventory": "node scripts/test-integration.cjs inventory",
+    "test:inventory:mutation": "node scripts/check-stock-mutation.cjs",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate deploy",
     "db:seed": "prisma db seed",

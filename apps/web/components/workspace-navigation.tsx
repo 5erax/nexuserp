@@ -18,6 +18,11 @@ function SessionLinks() {
       {data?.grants['catalog.products.read']?.includes('ORG') ? (
         <Link href="/catalog/products">Sản phẩm</Link>
       ) : null}
+      {['inventory.balances.read', 'inventory.movements.read'].some(
+        (permission) => data?.grants[permission]?.length,
+      ) ? (
+        <Link href="/inventory">Tồn kho</Link>
+      ) : null}
       {admin ? <Link href={'/admin/' + admin}>Quản trị</Link> : null}
     </>
   );
@@ -26,6 +31,7 @@ export function WorkspaceNavigation() {
   const path = usePathname();
   return path.startsWith('/admin') ||
     path.startsWith('/catalog') ||
+    path.startsWith('/inventory') ||
     path === '/workspace' ||
     path === '/change-password' ? (
     <SessionLinks />

@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { bootstrapFixture } from './setup';
 import { verifyCatalog } from './catalog-flow';
+import { verifyInventory } from './inventory-flow';
 async function login(page: Page, code: string, email: string, password: string) {
   await page.goto('/login');
   await page.getByLabel('Mã tổ chức').fill(code);
@@ -21,7 +22,7 @@ test('administrator and scoped employee manage IAM and Catalog with confirmed ch
   page,
   browser,
 }) => {
-  test.setTimeout(90000);
+  test.setTimeout(180000);
   page.setDefaultTimeout(10000);
   const { code, email, password } = bootstrapFixture();
   await login(page, code, email, password);
@@ -85,6 +86,7 @@ test('administrator and scoped employee manage IAM and Catalog with confirmed ch
   await expect(employee).toHaveURL(/\/forbidden$/);
   // Reuse authenticated actors while respecting the real login IP quota.
   await verifyCatalog(page, employee);
+  await verifyInventory(page, employee);
   await page.getByRole('link', { name: 'Chi nhánh', exact: true }).click();
   await page
     .getByRole('row')

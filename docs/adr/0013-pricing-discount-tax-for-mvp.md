@@ -21,6 +21,8 @@ SRS đề cập price list nhưng chưa có mô hình đó. Chọn giá biến t
 
 Calculator là hàm thuần, một quy tắc làm tròn dùng thống nhất. Chưa có phân bổ giảm giá cho hoàn hàng một phần; phải thiết kế ở Phase 5.
 
+Triển khai `sales/application/price-calculator.ts` dùng Decimal có sẵn từ Prisma, clone riêng với precision 50 và HALF_UP để không phụ thuộc thiết lập Decimal toàn cục. Hàm chỉ nhận/trả chuỗi, không truy cập database. Đặt tại application để domain không phải import generated client; không thêm thư viện hoặc nới quy tắc dependency. Precision này bao phủ tích 18 chữ số số lượng với 20 chữ số giá và tổng tối đa 100 dòng. `discount_value NUMERIC(20,3)` giới hạn giảm AMOUNT ở 17 chữ số nguyên; tổng tiền và đơn giá vẫn tối đa 20 chữ số. Giá trị vượt miền bị từ chối trước khi ghi.
+
 ## Cách kiểm chứng
 
 Issues #58, #60, #61: test 0.5 đồng làm tròn thành 1, nhiều dòng làm tròn riêng, subtotal 0, giảm 100%, âm/vượt subtotal, thuế khác 0, overflow, sửa giá catalog không đổi snapshot đã confirm.

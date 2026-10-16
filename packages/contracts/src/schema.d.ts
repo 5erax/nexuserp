@@ -807,24 +807,16 @@ export interface components {
             branchId: string;
             code: string;
             name: string;
-            /**
-             * @default ACTIVE
-             * @enum {string}
-             */
-            status: "ACTIVE" | "INACTIVE";
-            /** @default false */
-            isDefault: boolean;
+            /** @enum {string} */
+            status?: "ACTIVE" | "INACTIVE";
+            isDefault?: boolean;
         };
         UpdateWarehouseInput: {
             code?: string;
             name?: string;
-            /**
-             * @default ACTIVE
-             * @enum {string}
-             */
-            status: "ACTIVE" | "INACTIVE";
-            /** @default false */
-            isDefault: boolean;
+            /** @enum {string} */
+            status?: "ACTIVE" | "INACTIVE";
+            isDefault?: boolean;
         };
         BalanceData: {
             /** Format: uuid */

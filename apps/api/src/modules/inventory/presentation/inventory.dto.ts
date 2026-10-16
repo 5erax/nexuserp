@@ -38,11 +38,11 @@ export class CreateWarehouseInput {
   @MinLength(1)
   @MaxLength(200)
   name!: string;
-  @ApiPropertyOptional({ enum: ['ACTIVE', 'INACTIVE'], default: 'ACTIVE' })
+  @ApiPropertyOptional({ enum: ['ACTIVE', 'INACTIVE'] })
   @ValidateIf(present)
   @IsIn(['ACTIVE', 'INACTIVE'])
   status?: 'ACTIVE' | 'INACTIVE';
-  @ApiPropertyOptional({ default: false }) @ValidateIf(present) @IsBoolean() isDefault?: boolean;
+  @ApiPropertyOptional() @ValidateIf(present) @IsBoolean() isDefault?: boolean;
 }
 export class UpdateWarehouseInput extends PartialType(
   OmitType(CreateWarehouseInput, ['branchId'] as const),

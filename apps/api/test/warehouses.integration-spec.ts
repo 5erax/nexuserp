@@ -5,6 +5,7 @@ import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { configureApp } from '../src/configure-app';
+import { createOpenApi } from '../src/openapi';
 import { ENVIRONMENT, parseEnvironment } from '../src/config/environment';
 import { PrismaService } from '../src/infrastructure/prisma/prisma.service';
 import { AuthService } from '../src/modules/iam/application/auth.service';
@@ -393,6 +394,40 @@ describe('Warehouse management and scoped Inventory HTTP reads', () => {
     });
     expect(defaults).toHaveLength(1);
     expect([warehouseA, extra.id]).toContain(defaults[0]!.id);
+  });
+  it('keeps PATCH state fields optional and preserves inactive/default state on a name-only update', async () => {
+    const schema = createOpenApi(app).components?.schemas?.UpdateWarehouseInput;
+    expect(schema).toMatchObject({
+      properties: { status: { type: 'string' }, isDefault: { type: 'boolean' } },
+    });
+    expect(schema).not.toHaveProperty('properties.status.default');
+    expect(schema).not.toHaveProperty('properties.isDefault.default');
+    for (const input of [
+      {
+        branchId: branchA,
+        code: 'PATCH-INACTIVE',
+        name: 'Inactive before rename',
+        status: 'INACTIVE',
+        isDefault: false,
+      },
+      {
+        branchId: branchA,
+        code: 'PATCH-DEFAULT',
+        name: 'Default before rename',
+        status: 'ACTIVE',
+        isDefault: true,
+      },
+    ]) {
+      const created = await call('post', '/warehouses').send(input).expect(201);
+      const updated = await call('patch', '/warehouses/' + created.body.data.id)
+        .send({ name: 'Renamed only' })
+        .expect(200);
+      expect(updated.body.data).toMatchObject({
+        name: 'Renamed only',
+        status: input.status,
+        isDefault: input.isDefault,
+      });
+    }
   });
   it('holds both warehouse and branch locks until the caller transaction ends', async () => {
     const service = app.get(WarehousesService);

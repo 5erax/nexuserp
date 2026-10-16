@@ -298,7 +298,7 @@ describe('Warehouse management and scoped Inventory HTTP reads', () => {
       data: {
         organizationId: org,
         productId: source.productId,
-        sku: randomUUID(),
+        sku: randomUUID().toUpperCase(),
         name: 'Cursor fixture',
         sellingPrice: '1',
       },

@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { ConflictException, Injectable, InternalServerErrorException } from '@nestjs/common';
 import { Prisma } from '../../generated/prisma/client';
 import { PrismaService } from '../../infrastructure/prisma/prisma.service';
+import { withTransactionRetry } from '../../infrastructure/prisma/transaction';
 import { IdempotentCommand, type CommandIdentity } from './command';
 
 const conflict = (code: 'IDEMPOTENCY_KEY_REUSED' | 'REQUEST_IN_PROGRESS') =>
@@ -49,7 +50,7 @@ export class IdempotencyService {
     const requestHash = createHash('sha256')
       .update(canonical({ version: identity.version, input: command.input }))
       .digest('hex');
-    return this.prisma.$transaction(async (tx) => {
+    return withTransactionRetry(this.prisma, async (tx) => {
       const [row] = await tx.$queryRaw<
         { locked: boolean }[]
       >`SELECT pg_try_advisory_xact_lock(${lock}::bigint) AS locked`;

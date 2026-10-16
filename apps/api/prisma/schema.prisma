@@ -291,6 +291,7 @@ model StockReservation {
 
   @@unique([organizationId, balanceId, referenceId])
   @@index([organizationId, balanceId, status])
+  @@index([organizationId, referenceId])
   @@map("stock_reservations")
 }
 

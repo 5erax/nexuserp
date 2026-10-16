@@ -8,6 +8,7 @@ module.exports = {
     'src/**/application/**/*.ts',
     'src/**/domain/**/*.ts',
     'src/common/idempotency/**/*.ts',
+    'src/infrastructure/prisma/transaction.ts',
   ],
   coverageReporters: ['json', 'lcov', 'text-summary'],
   coverageDirectory: 'coverage',

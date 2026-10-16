@@ -293,34 +293,44 @@ describe('Warehouse management and scoped Inventory HTTP reads', () => {
     await call('post', '/inventory/balances').send({ onHand: '99' }).expect(404);
   });
   it('keeps cursor boundaries stable when movements append, including equal timestamps', async () => {
-    const referenceId = randomUUID();
-    const post = (tx: Parameters<StockLedgerService['post']>[0]) =>
-      app.get(StockLedgerService).post(tx, {
+    const source = await prisma.productVariant.findUniqueOrThrow({ where: { id: variant } });
+    const timelineVariant = await prisma.productVariant.create({
+      data: {
         organizationId: org,
-        warehouseId: warehouseA,
-        variantId: variant,
-        createdBy: actor,
-        referenceId,
-        referenceType: 'ADJUSTMENT_IN',
-        quantityDelta: '1',
-      });
-    const otherVariant = secondVariant;
+        productId: source.productId,
+        sku: randomUUID(),
+        name: 'Cursor fixture',
+        sellingPrice: '1',
+      },
+    });
+    const createdAt = new Date('2020-01-01T00:00:00.000Z');
+    // Explicit fixture timestamps exercise the UUID tie-breaker without rewriting immutable history.
     await prisma.$transaction(async (tx) => {
-      await post(tx);
-      await app.get(StockLedgerService).post(tx, {
-        organizationId: org,
-        warehouseId: warehouseA,
-        variantId: otherVariant,
-        createdBy: actor,
-        referenceId,
-        referenceType: 'ADJUSTMENT_IN',
-        quantityDelta: '1',
+      await tx.stockBalance.create({
+        data: {
+          organizationId: org,
+          warehouseId: warehouseA,
+          variantId: timelineVariant.id,
+          onHand: '2',
+        },
+      });
+      await tx.stockMovement.createMany({
+        data: [randomUUID(), randomUUID()].map((referenceId) => ({
+          organizationId: org,
+          warehouseId: warehouseA,
+          variantId: timelineVariant.id,
+          createdBy: actor,
+          referenceId,
+          referenceType: 'ADJUSTMENT_IN',
+          quantityDelta: '1',
+          createdAt,
+        })),
       });
     });
-    const path = '/inventory/movements?limit=1&referenceId=' + referenceId;
+    const path = '/inventory/movements?limit=1&variantId=' + timelineVariant.id;
     const first = (await call('get', path, reader).expect(200)).body;
     const initial = await prisma.stockMovement.findMany({
-      where: { organizationId: org, referenceId },
+      where: { organizationId: org, variantId: timelineVariant.id },
     });
     expect(initial[0]!.createdAt).toEqual(initial[1]!.createdAt);
     expect(first.meta.nextCursor).toEqual(expect.any(String));
@@ -328,9 +338,9 @@ describe('Warehouse management and scoped Inventory HTTP reads', () => {
       app.get(StockLedgerService).post(tx, {
         organizationId: org,
         warehouseId: warehouseA,
-        variantId: variant,
+        variantId: timelineVariant.id,
         createdBy: actor,
-        referenceId,
+        referenceId: randomUUID(),
         referenceType: 'ADJUSTMENT_OUT',
         quantityDelta: '-1',
       }),

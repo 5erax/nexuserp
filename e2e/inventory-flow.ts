@@ -22,12 +22,12 @@ export async function verifyInventory(owner: Page, reviewer: Page) {
     await owner.goto('/inventory');
     await owner.getByRole('button', { name: 'Tạo phiếu tồn kho', exact: true }).click();
     const form = owner.getByRole('heading', { name: 'Tạo phiếu tồn kho' }).locator('..');
-    await form.getByLabel('Kho', { exact: true }).selectOption(warehouse.id);
-    await form.getByLabel('Loại phiếu').selectOption(kind);
+    await form.getByRole('combobox', { name: 'Kho', exact: true }).selectOption(warehouse.id);
+    await form.getByRole('combobox', { name: 'Loại phiếu', exact: true }).selectOption(kind);
     await form.getByLabel('Lý do', { exact: true }).fill('Kiểm kê cuối ngày');
     for (const [sku, quantity] of rows) {
       await form
-        .getByLabel('SKU', { exact: true })
+        .getByRole('combobox', { name: 'SKU', exact: true })
         .selectOption({ label: sku === 'E2E-L' ? 'E2E-L · Size L đã cập nhật' : 'E2E-M · Size M' });
       await form.getByLabel('Số lượng thay đổi').fill(quantity);
       await form.getByRole('button', { name: 'Thêm vào phiếu' }).click();

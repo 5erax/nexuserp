@@ -7,6 +7,7 @@ import { CatalogModule } from './modules/catalog/catalog.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
 import { SalesModule } from './modules/sales/sales.module';
 import { CrmModule } from './modules/crm/crm.module';
+import { OutboxModule } from './modules/outbox/outbox.module';
 @Module({
   imports: [
     PrismaModule,
@@ -17,6 +18,7 @@ import { CrmModule } from './modules/crm/crm.module';
     InventoryModule,
     SalesModule,
     CrmModule,
+    OutboxModule,
   ],
 })
 export class AppModule {}

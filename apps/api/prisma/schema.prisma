@@ -556,21 +556,35 @@ model Payment {
 }
 
 model OutboxEvent {
-  id             String       @id @default(uuid()) @db.Uuid
-  organizationId String       @map("organization_id") @db.Uuid
-  eventType      String       @map("event_type") @db.VarChar(100)
-  aggregateId    String       @map("aggregate_id") @db.Uuid
-  payload        Json         @db.JsonB
-  status         String       @default("PENDING") @db.VarChar(16)
-  attempts       Int          @default(0)
-  availableAt    DateTime     @default(now()) @map("available_at") @db.Timestamptz(3)
-  lockedUntil    DateTime?    @map("locked_until") @db.Timestamptz(3)
-  lockToken      String?      @map("lock_token") @db.Uuid
-  publishedAt    DateTime?    @map("published_at") @db.Timestamptz(3)
-  lastError      String?      @map("last_error") @db.VarChar(200)
-  createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  id             String         @id @default(uuid()) @db.Uuid
+  organizationId String         @map("organization_id") @db.Uuid
+  eventType      String         @map("event_type") @db.VarChar(100)
+  aggregateId    String         @map("aggregate_id") @db.Uuid
+  payload        Json           @db.JsonB
+  status         String         @default("PENDING") @db.VarChar(16)
+  attempts       Int            @default(0)
+  availableAt    DateTime       @default(now()) @map("available_at") @db.Timestamptz(3)
+  lockedUntil    DateTime?      @map("locked_until") @db.Timestamptz(3)
+  lockToken      String?        @map("lock_token") @db.Uuid
+  publishedAt    DateTime?      @map("published_at") @db.Timestamptz(3)
+  lastError      String?        @map("last_error") @db.VarChar(200)
+  createdAt      DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  receipt        OutboxReceipt?
 
+  @@unique([organizationId, id])
   @@index([availableAt, id], where: raw("(published_at IS NULL)"), map: "outbox_events_unpublished")
   @@map("outbox_events")
+}
+
+model OutboxReceipt {
+  eventId        String      @id @map("event_id") @db.Uuid
+  organizationId String      @map("organization_id") @db.Uuid
+  eventType      String      @map("event_type") @db.VarChar(100)
+  aggregateId    String      @map("aggregate_id") @db.Uuid
+  processedAt    DateTime    @default(now()) @map("processed_at") @db.Timestamptz(3)
+  event          OutboxEvent @relation(fields: [organizationId, eventId], references: [organizationId, id], onDelete: Restrict)
+
+  @@unique([organizationId, eventId])
+  @@map("outbox_receipts")
 }

@@ -14,6 +14,8 @@ const persistence = [
   ['stockMovement', 'stock_movements', 'inventory'],
   ['payment', 'payments', 'finance'],
   ['documentSequence', 'document_sequences', 'platform'],
+  ['outboxEvent', 'outbox_events', 'outbox'],
+  ['outboxReceipt', 'outbox_receipts', 'outbox'],
   ['salesOrder', 'sales_orders', 'sales'],
   ['salesOrderItem', 'sales_order_items', 'sales'],
   ['shipment', 'shipments', 'sales'],

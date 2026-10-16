@@ -17,6 +17,7 @@ Chỉ mục tài liệu của dự án. Nguồn sự thật về tiến độ l�
 | [development/CATALOG.md](development/CATALOG.md) | API sản phẩm/SKU, trạng thái lưu trữ và kiểm thử Phase 2 |
 | [development/INVENTORY.md](development/INVENTORY.md) | Ledger nguyên tử, quyền sở hữu số dư và kiểm thử đồng thời |
 | [development/CRM.md](development/CRM.md) | Hồ sơ khách hàng, contact dùng chung, archive và lịch sử đơn theo quyền Sales |
+| [development/OUTBOX.md](development/OUTBOX.md) | Claim/retry/lease, consumer idempotent và runbook sự kiện sau commit |
 | [development/CONFIGURATION.md](development/CONFIGURATION.md) | Biến môi trường và phạm vi secret |
 | [development/DEPENDENCIES.md](development/DEPENDENCIES.md) | Override bảo mật và advisory tooling còn theo dõi |
 | [architecture/SYSTEM_ARCHITECTURE.md](architecture/SYSTEM_ARCHITECTURE.md) | Luồng web → API → PostgreSQL đang triển khai |

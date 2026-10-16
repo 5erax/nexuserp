@@ -8,7 +8,7 @@ flowchart LR
     prisma --> db[(PostgreSQL 17)]
 ```
 
-Web dùng App Router, TanStack Query, shared UI tokens và client từ OpenAPI. NestJS đặt global prefix `/api/v1`, validation nghiêm ngặt, requestId, envelope, exception filter và log JSON đã giới hạn trường. IAM có auth cookie/CSRF, JWT kiểm tra family/user mỗi request và guard mặc định từ chối; mọi route phải có metadata công khai, session hoặc permission. Audit cùng transaction và trigger append-only. Giao diện auth và quản trị user/role/chi nhánh/tổ chức đã có; Catalog/Inventory đang triển khai.
+Web dùng App Router, TanStack Query, shared UI tokens và client từ OpenAPI. NestJS đặt global prefix `/api/v1`, validation nghiêm ngặt, requestId, envelope, exception filter và log JSON đã giới hạn trường. IAM có auth cookie/CSRF, JWT kiểm tra family/user mỗi request và guard mặc định từ chối; mọi route phải có metadata công khai, session hoặc permission. Audit cùng transaction và trigger append-only. Đã có giao diện auth/quản trị/Catalog và Inventory ledger/reservation, đối soát, API kho/số dư/movement; phiếu điều chỉnh và Inventory Workbench đang tiếp tục triển khai.
 
 Liveness `/health` không cần database. Readiness `/health/ready` chạy `SELECT 1` trên PostgreSQL qua HealthService và Prisma, trả 503 không lộ credential khi mất kết nối. API được phép khởi chạy khi database tạm hỏng, nhưng thiếu/sai cấu hình phải fail ngay.
 

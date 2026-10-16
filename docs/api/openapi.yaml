@@ -3272,36 +3272,11 @@ paths:
     get:
       operationId: InventoryController_movements
       parameters:
-        - name: page
-          required: false
-          in: query
-          schema:
-            minimum: 1
-            maximum: 1000000
-            default: 1
-            type: integer
-        - name: pageSize
-          required: false
-          in: query
-          schema:
-            minimum: 1
-            maximum: 100
-            default: 20
-            type: integer
         - name: q
           required: false
           in: query
           schema:
             type: string
-        - name: sortOrder
-          required: false
-          in: query
-          schema:
-            default: desc
-            type: string
-            enum:
-              - asc
-              - desc
         - name: warehouseId
           required: false
           in: query
@@ -3313,6 +3288,19 @@ paths:
           in: query
           schema:
             format: uuid
+            type: string
+        - name: limit
+          required: false
+          in: query
+          schema:
+            minimum: 1
+            maximum: 100
+            default: 20
+            type: integer
+        - name: cursor
+          required: false
+          in: query
+          schema:
             type: string
         - name: referenceType
           required: false
@@ -4564,6 +4552,17 @@ components:
         - referenceId
         - createdBy
         - createdAt
+    MovementMeta:
+      type: object
+      properties:
+        requestId:
+          type: string
+        nextCursor:
+          type: string
+          nullable: true
+      required:
+        - requestId
+        - nextCursor
     MovementListResponse:
       type: object
       properties:
@@ -4572,7 +4571,7 @@ components:
           items:
             $ref: "#/components/schemas/MovementData"
         meta:
-          $ref: "#/components/schemas/PageMeta"
+          $ref: "#/components/schemas/MovementMeta"
       required:
         - data
         - meta

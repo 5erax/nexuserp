@@ -203,6 +203,8 @@ export class WarehousesService {
         include,
       });
       if (!before) throw new NotFoundException();
+      if ((input.status ?? before.status) === 'INACTIVE' && input.isDefault)
+        throw new BadRequestException();
       const status = input.status ?? before.status,
         isDefault = status === 'INACTIVE' ? false : (input.isDefault ?? before.isDefault);
       if (status === 'ACTIVE') await this.branch(tx, actor.organizationId, before.branchId);

@@ -206,15 +206,22 @@ describe('Warehouse management and scoped Inventory HTTP reads', () => {
     await call('get', '/warehouses/' + warehouseB, reader).expect(404);
     await call('get', '/warehouses/' + foreignWarehouse).expect(404);
     for (const path of ['/inventory/balances', '/inventory/movements']) {
-      const result = await call('get', path + '?pageSize=1', reader).expect(200);
-      expect(result.body.meta.total).toBe(2);
+      const timeline = path.endsWith('movements');
+      const result = await call(
+        'get',
+        path + (timeline ? '?limit=1' : '?pageSize=1'),
+        reader,
+      ).expect(200);
+      if (timeline) {
+        expect(result.body.meta.nextCursor).toEqual(expect.any(String));
+        expect(result.body.meta).not.toHaveProperty('total');
+      } else expect(result.body.meta.total).toBe(2);
       expect(result.body.data).toHaveLength(1);
       expect(result.body.data[0].warehouseId).toBe(warehouseA);
       expect(
-        (await call('get', path + '?warehouseId=' + warehouseB, reader).expect(200)).body.meta
-          .total,
-      ).toBe(0);
-      expect((await call('get', path, foreign).expect(200)).body.meta.total).toBe(0);
+        (await call('get', path + '?warehouseId=' + warehouseB, reader).expect(200)).body.data,
+      ).toEqual([]);
+      expect((await call('get', path, foreign).expect(200)).body.data).toEqual([]);
     }
   });
   it('derives exact available quantities and flags the inclusive low-stock threshold', async () => {
@@ -252,7 +259,8 @@ describe('Warehouse management and scoped Inventory HTTP reads', () => {
         '&from=2020-01-01T00:00:00Z&to=2099-01-01T00:00:00Z',
       reader,
     ).expect(200);
-    expect(filtered.body.meta.total).toBe(1);
+    expect(filtered.body.data).toHaveLength(1);
+    expect(filtered.body.meta.nextCursor).toBeNull();
     expect(filtered.body.data[0]).toMatchObject({
       quantityDelta: '10.125',
       unitCost: null,
@@ -265,17 +273,78 @@ describe('Warehouse management and scoped Inventory HTTP reads', () => {
           'get',
           '/inventory/movements?warehouseId=' + warehouseA + '&referenceType=SHIPMENT_OUT',
         ).expect(200)
-      ).body.meta.total,
-    ).toBe(0);
+      ).body.data,
+    ).toEqual([]);
     for (const query of [
       '?from=bad',
       '?from=2099-01-01&to=2020-01-01',
       '?referenceType=UNKNOWN',
-      '?pageSize=101',
+      '?limit=101',
+      '?limit=0',
+      '?pageSize=1',
+      '?page=2',
+      '?sortOrder=asc',
+      '?cursor=bad',
+      '?cursor=' +
+        Buffer.from(JSON.stringify({ id: randomUUID(), createdAt: 'bad' })).toString('base64url'),
       '?onHand=9',
     ])
       await call('get', '/inventory/movements' + query).expect(400);
     await call('post', '/inventory/balances').send({ onHand: '99' }).expect(404);
+  });
+  it('keeps cursor boundaries stable when movements append, including equal timestamps', async () => {
+    const referenceId = randomUUID();
+    const post = (tx: Parameters<StockLedgerService['post']>[0]) =>
+      app.get(StockLedgerService).post(tx, {
+        organizationId: org,
+        warehouseId: warehouseA,
+        variantId: variant,
+        createdBy: actor,
+        referenceId,
+        referenceType: 'ADJUSTMENT_IN',
+        quantityDelta: '1',
+      });
+    const otherVariant = secondVariant;
+    await prisma.$transaction(async (tx) => {
+      await post(tx);
+      await app.get(StockLedgerService).post(tx, {
+        organizationId: org,
+        warehouseId: warehouseA,
+        variantId: otherVariant,
+        createdBy: actor,
+        referenceId,
+        referenceType: 'ADJUSTMENT_IN',
+        quantityDelta: '1',
+      });
+    });
+    const path = '/inventory/movements?limit=1&referenceId=' + referenceId;
+    const first = (await call('get', path, reader).expect(200)).body;
+    const initial = await prisma.stockMovement.findMany({
+      where: { organizationId: org, referenceId },
+    });
+    expect(initial[0]!.createdAt).toEqual(initial[1]!.createdAt);
+    expect(first.meta.nextCursor).toEqual(expect.any(String));
+    await prisma.$transaction((tx) =>
+      app.get(StockLedgerService).post(tx, {
+        organizationId: org,
+        warehouseId: warehouseA,
+        variantId: variant,
+        createdBy: actor,
+        referenceId,
+        referenceType: 'ADJUSTMENT_OUT',
+        quantityDelta: '-1',
+      }),
+    );
+    const next = (await call('get', path + '&cursor=' + first.meta.nextCursor, reader).expect(200))
+      .body;
+    expect(next.data).toHaveLength(1);
+    expect(new Set([first.data[0].id, next.data[0].id])).toEqual(
+      new Set(initial.map((row) => row.id)),
+    );
+    expect(next.meta.nextCursor).toBeNull();
+    expect(
+      (await call('get', path + '&cursor=' + first.meta.nextCursor, foreign).expect(200)).body.data,
+    ).toEqual([]);
   });
   it('creates a normalized warehouse once and switches the active branch default atomically', async () => {
     const key = randomUUID(),
@@ -419,6 +488,11 @@ describe('Warehouse management and scoped Inventory HTTP reads', () => {
       },
     ]) {
       const created = await call('post', '/warehouses').send(input).expect(201);
+      if (input.status === 'INACTIVE') {
+        await call('patch', '/warehouses/' + created.body.data.id)
+          .send({ isDefault: true })
+          .expect(400);
+      }
       const updated = await call('patch', '/warehouses/' + created.body.data.id)
         .send({ name: 'Renamed only' })
         .expect(200);

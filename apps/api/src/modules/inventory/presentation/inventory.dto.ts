@@ -1,13 +1,16 @@
 import { ApiProperty, ApiPropertyOptional, OmitType, PartialType } from '@nestjs/swagger';
-import { Transform } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
   IsBoolean,
   IsDateString,
   IsIn,
+  IsInt,
   IsOptional,
   IsString,
   IsUUID,
   MaxLength,
+  Max,
+  Min,
   MinLength,
   ValidateIf,
 } from 'class-validator';
@@ -52,7 +55,19 @@ export class BalanceQuery extends PageQuery {
   @ApiPropertyOptional({ format: 'uuid' }) @IsOptional() @IsUUID('4') warehouseId?: string;
   @ApiPropertyOptional({ format: 'uuid' }) @IsOptional() @IsUUID('4') variantId?: string;
 }
-export class MovementQuery extends BalanceQuery {
+export class MovementQuery extends OmitType(BalanceQuery, [
+  'page',
+  'pageSize',
+  'sortOrder',
+] as const) {
+  @ApiPropertyOptional({ type: 'integer', default: 20, minimum: 1, maximum: 100 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  limit: number = 20;
+  @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(256) cursor?: string;
   @ApiPropertyOptional({ enum: ['OPENING', 'ADJUSTMENT_IN', 'ADJUSTMENT_OUT', 'SHIPMENT_OUT'] })
   @IsOptional()
   @IsIn(['OPENING', 'ADJUSTMENT_IN', 'ADJUSTMENT_OUT', 'SHIPMENT_OUT'])
@@ -114,7 +129,10 @@ export class BalanceListResponse {
   @ApiProperty({ type: [BalanceData] }) data!: BalanceData[];
   @ApiProperty({ type: PageMeta }) meta!: PageMeta;
 }
+class MovementMeta extends RequestMeta {
+  @ApiProperty({ nullable: true, type: String }) nextCursor!: string | null;
+}
 export class MovementListResponse {
   @ApiProperty({ type: [MovementData] }) data!: MovementData[];
-  @ApiProperty({ type: PageMeta }) meta!: PageMeta;
+  @ApiProperty({ type: MovementMeta }) meta!: MovementMeta;
 }

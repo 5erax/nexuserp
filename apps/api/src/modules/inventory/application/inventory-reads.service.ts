@@ -3,6 +3,7 @@ import { Prisma } from '../../../generated/prisma/client';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
 import { ListResult } from '../../../common/pagination';
 import { scopeFilter, type Actor } from '../../iam/application/access-scope';
+import { z } from 'zod';
 
 type Query = {
   page: number;
@@ -12,7 +13,9 @@ type Query = {
   variantId?: string;
   sortOrder: 'asc' | 'desc';
 };
-type MovementQuery = Query & {
+type MovementQuery = Omit<Query, 'page' | 'pageSize' | 'sortOrder'> & {
+  limit: number;
+  cursor?: string;
   referenceType?: string;
   referenceId?: string;
   from?: string;
@@ -31,7 +34,7 @@ export class InventoryReadsService {
   private where(
     actor: Actor,
     permission: 'inventory.balances.read' | 'inventory.movements.read',
-    query: Query,
+    query: Pick<Query, 'q' | 'warehouseId' | 'variantId'>,
   ) {
     if (!actor.grants[permission]?.some((scope) => scope === 'ORG' || scope === 'BRANCH'))
       throw new ForbiddenException();
@@ -100,6 +103,17 @@ export class InventoryReadsService {
     );
   }
   async movements(actor: Actor, query: MovementQuery) {
+    let cursor: { id: string; createdAt: string } | undefined;
+    if (query.cursor)
+      try {
+        if (!/^[A-Za-z0-9_-]{1,256}$/.test(query.cursor)) throw new Error('shape');
+        cursor = z
+          .object({ id: z.string().uuid(), createdAt: z.string().datetime() })
+          .strict()
+          .parse(JSON.parse(Buffer.from(query.cursor, 'base64url').toString('utf8')));
+      } catch {
+        throw new BadRequestException('Cursor không hợp lệ');
+      }
     if (
       (query.from && !Number.isFinite(new Date(query.from).valueOf())) ||
       (query.to && !Number.isFinite(new Date(query.to).valueOf())) ||
@@ -111,6 +125,16 @@ export class InventoryReadsService {
         this.where(actor, 'inventory.movements.read', query),
         ...(query.referenceType ? [{ referenceType: query.referenceType }] : []),
         ...(query.referenceId ? [{ referenceId: query.referenceId }] : []),
+        ...(cursor
+          ? [
+              {
+                OR: [
+                  { createdAt: { lt: new Date(cursor.createdAt) } },
+                  { createdAt: new Date(cursor.createdAt), id: { lt: cursor.id } },
+                ],
+              },
+            ]
+          : []),
         ...(query.from || query.to
           ? [
               {
@@ -123,21 +147,15 @@ export class InventoryReadsService {
           : []),
       ],
     };
-    const [rows, total] = await this.prisma.$transaction(
-      [
-        this.prisma.stockMovement.findMany({
-          where,
-          include,
-          orderBy: [{ createdAt: query.sortOrder }, { id: query.sortOrder }],
-          skip: (query.page - 1) * query.pageSize,
-          take: query.pageSize,
-        }),
-        this.prisma.stockMovement.count({ where }),
-      ],
-      { isolationLevel: 'RepeatableRead' },
-    );
+    const rows = await this.prisma.stockMovement.findMany({
+      where,
+      include,
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      take: query.limit + 1,
+    });
+    const last = rows.slice(0, query.limit).at(-1);
     return new ListResult(
-      rows.map((row) => ({
+      rows.slice(0, query.limit).map((row) => ({
         id: row.id,
         warehouseId: row.warehouseId,
         warehouseName: row.warehouse.name,
@@ -153,7 +171,14 @@ export class InventoryReadsService {
         createdBy: row.createdBy,
         createdAt: row.createdAt.toISOString(),
       })),
-      { page: query.page, pageSize: query.pageSize, total },
+      {
+        nextCursor:
+          rows.length > query.limit && last
+            ? Buffer.from(
+                JSON.stringify({ id: last.id, createdAt: last.createdAt.toISOString() }),
+              ).toString('base64url')
+            : null,
+      },
     );
   }
 }

@@ -873,9 +873,13 @@ export interface components {
             /** Format: date-time */
             createdAt: string;
         };
+        MovementMeta: {
+            requestId: string;
+            nextCursor: string | null;
+        };
         MovementListResponse: {
             data: components["schemas"]["MovementData"][];
-            meta: components["schemas"]["PageMeta"];
+            meta: components["schemas"]["MovementMeta"];
         };
     };
     responses: never;
@@ -4994,12 +4998,11 @@ export interface operations {
     InventoryController_movements: {
         parameters: {
             query?: {
-                page?: number;
-                pageSize?: number;
                 q?: string;
-                sortOrder?: "asc" | "desc";
                 warehouseId?: string;
                 variantId?: string;
+                limit?: number;
+                cursor?: string;
                 referenceType?: "OPENING" | "ADJUSTMENT_IN" | "ADJUSTMENT_OUT" | "SHIPMENT_OUT";
                 referenceId?: string;
                 from?: string;

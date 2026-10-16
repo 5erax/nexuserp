@@ -226,6 +226,13 @@ describe('INV-004/005/007 Opening and approved stock adjustments', () => {
   it('requires another authorized actor before posting 100 opening lines', async () => {
     const ids = await variants(100),
       doc = await draft(ids.map((variantId) => ({ variantId, quantityDelta: '1' })));
+    const audit = await prisma.auditLog.findFirstOrThrow({
+      where: { organizationId: org, entityId: doc.id, action: 'inventory.adjustment_created' },
+    });
+    expect(audit.changes).toMatchObject({
+      after: { itemCount: 100, totalAbsoluteQuantity: '100.000' },
+    });
+    expect(audit.changes).not.toHaveProperty('after.items');
     const submittedKey = randomUUID();
     expect((await action(doc.id, 'post', owner, submittedKey).expect(200)).body.data.status).toBe(
       'PENDING_APPROVAL',
@@ -315,10 +322,12 @@ describe('INV-004/005/007 Opening and approved stock adjustments', () => {
         });
       else await prisma.branch.update({ where: { id: branchId }, data: { status: 'INACTIVE' } });
       try {
-        expect((await action(doc.id, 'post', outsider).expect(409)).body.error.code).toBe(
+        const authorized = target === 'branch' ? owner : outsider;
+        if (target === 'branch') await action(doc.id, 'post', outsider).expect(404);
+        expect((await action(doc.id, 'post', authorized).expect(409)).body.error.code).toBe(
           'WAREHOUSE_INACTIVE',
         );
-        await call('post', '/inventory/adjustments', outsider)
+        await call('post', '/inventory/adjustments', authorized)
           .send({
             warehouseId: secondWarehouse,
             kind: 'OPENING',

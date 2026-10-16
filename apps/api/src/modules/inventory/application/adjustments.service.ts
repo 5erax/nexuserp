@@ -252,7 +252,11 @@ export class AdjustmentsService {
         });
         const result = data(doc);
         await this.record(tx, actor, doc, 'inventory.adjustment_created', context, {
-          after: result,
+          // Lines remain on the document; repeating 100 SKU names exceeds the bounded audit payload.
+          after: {
+            ...summary(doc, doc.items.length),
+            totalAbsoluteQuantity: result.totalAbsoluteQuantity,
+          },
         });
         return result;
       },

@@ -18,6 +18,7 @@ import { OrdersController } from './presentation/orders.controller';
     FinanceModule,
   ],
   providers: [OrdersService],
+  exports: [OrdersService],
   controllers: [OrdersController],
 })
 export class SalesModule {}

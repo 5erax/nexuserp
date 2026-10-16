@@ -45,10 +45,10 @@ API đối soát `GET /inventory/reconciliation` dùng `inventory.balances.read`
 | inventory.adjustments.create | POST /inventory/adjustments, POST /inventory/adjustments/:id/cancel | ORG, BRANCH | 2 |
 | inventory.adjustments.approve | POST /inventory/adjustments/:id/approve, POST /inventory/adjustments/:id/reject | ORG, BRANCH | 2 |
 | inventory.adjustments.post | POST /inventory/adjustments/:id/post | ORG, BRANCH | 2 |
-| crm.customers.read | GET /customers, /customers/:id | ORG, BRANCH | 3 |
+| crm.customers.read | GET /customers, /customers/:id, /customers/:id/orders (history cần thêm sales.orders.read) | ORG, BRANCH | 3 |
 | crm.customers.create | POST /customers | ORG, BRANCH | 3 |
 | crm.customers.update | PATCH /customers/:id | ORG, BRANCH | 3 |
-| sales.orders.read | GET /sales/orders, /sales/orders/:id | ORG, BRANCH, OWN | 3 |
+| sales.orders.read | GET /sales/orders, /sales/orders/:id, /customers/:id/orders (cùng crm.customers.read) | ORG, BRANCH, OWN | 3 |
 | sales.orders.create | POST /sales/orders | ORG, BRANCH | 3 |
 | sales.orders.update | PATCH /sales/orders/:id (DRAFT) | ORG, BRANCH, OWN | 3 |
 | sales.orders.confirm | POST /sales/orders/:id/confirm | ORG, BRANCH, OWN | 3 |

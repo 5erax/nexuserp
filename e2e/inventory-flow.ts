@@ -51,7 +51,7 @@ export async function verifyInventory(owner: Page, reviewer: Page) {
     ['E2E-M', '1'],
   ]);
   await expect(form.getByRole('alert')).toContainText('Chưa kết nối');
-  await expect(form.getByLabel('Lý do', { exact: true })).toBeDisabled();
+  await expect(form.getByRole('textbox', { name: 'Lý do', exact: true })).toBeDisabled();
   await form.getByRole('button', { name: 'Tạo phiếu', exact: true }).click();
   await expect(owner).toHaveURL(/\/inventory\/adjustments\/[0-9a-f-]+$/);
   expect(keys).toHaveLength(2);

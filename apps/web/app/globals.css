@@ -551,3 +551,43 @@ footer {
     padding: 1rem;
   }
 }
+
+.warehouse-picker {
+  display: grid;
+  gap: 0.6rem;
+  margin: 1.25rem 0;
+  max-width: 100%;
+}
+.warehouse-picker label,
+.inventory-content label {
+  display: grid;
+  gap: 0.35rem;
+  min-width: 0;
+}
+.warehouse-picker select,
+.inventory-content select {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+.inventory-content .edit-panel {
+  display: grid;
+  gap: 0.75rem;
+}
+.inventory-content .admin-tabs {
+  margin-bottom: 1.5rem;
+}
+.inventory-content [aria-pressed='true'] {
+  border-color: var(--accent);
+  background: var(--soft);
+}
+.inventory-content .profile-details dd,
+.inventory-content td {
+  overflow-wrap: anywhere;
+}
+.inventory-content table {
+  min-width: 720px;
+}
+.stock-warning {
+  font-weight: 600;
+}

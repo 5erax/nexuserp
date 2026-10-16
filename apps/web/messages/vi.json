@@ -69,6 +69,14 @@
     "VALIDATION_ERROR": "Thông tin chưa hợp lệ. Kiểm tra lại các trường đã nhập.",
     "PASSWORD_CHANGE_REQUIRED": "Bạn cần đổi mật khẩu trước khi tiếp tục.",
     "SESSION_INVALID": "Phiên đã hết hạn. Vui lòng đăng nhập lại.",
-    "UNAUTHORIZED": "Vui lòng đăng nhập để tiếp tục."
+    "UNAUTHORIZED": "Vui lòng đăng nhập để tiếp tục.",
+    "INSUFFICIENT_STOCK": "Không đủ tồn khả dụng. Kiểm tra số lượng đã giữ trước khi ghi sổ.",
+    "APPROVAL_REQUIRED": "Phiếu đang chờ người khác phê duyệt.",
+    "SELF_APPROVAL_FORBIDDEN": "Người tạo phiếu cần nhờ người khác phê duyệt.",
+    "INVALID_STATE_TRANSITION": "Trạng thái phiếu đã thay đổi. Cập nhật trạng thái trước khi thao tác tiếp.",
+    "WAREHOUSE_INACTIVE": "Kho hoặc chi nhánh đã ngừng hoạt động. Liên hệ quản trị viên.",
+    "MOVEMENT_ALREADY_POSTED": "SKU đã có lịch sử kho hoặc biến động đã được ghi nhận. Kiểm tra phiếu trước khi thử lại.",
+    "STOCK_LIMIT_EXCEEDED": "Số dư vượt giới hạn lưu trữ. Kiểm tra lại số lượng.",
+    "STOCK_BALANCE_MISMATCH": "Số dư giữ hàng chưa khớp. Cần quản trị viên đối soát."
   }
 }

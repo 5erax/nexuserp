@@ -585,6 +585,9 @@ footer {
 .inventory-content td {
   overflow-wrap: anywhere;
 }
+.inventory-content table {
+  min-width: 720px;
+}
 .stock-warning {
   font-weight: 600;
 }

@@ -15,7 +15,7 @@ Sales DRAFT chỉ query persistence của orders/items/shipments/events. Catalog
 
 IAM công bố `AuthService.lockActor` để khóa organization và đọc lại actor, `OrganizationService.lockBranch/businessYear` cho scope/niên độ. Các helper khóa yêu cầu caller transaction; số SO cấp qua helper nền tảng `common/sales-order-number.ts` trong cùng transaction. Test `module-read-ownership.spec.ts` chặn các bypass ORM/SQL từ Sales/CRM sang bảng module khác; integration kiểm tra gọi nhầm root client bị từ chối, cùng các hành vi scope/snapshot/concurrency thực tế.
 
-API có `presentation / application / domain / infrastructure` khi phát sinh logic tương ứng. Health là module kỹ thuật, không tính vào 10 business module. Thư viện `packages/shared` chưa có utility vì chưa có nhu cầu dùng chung thực tế.
+API có `presentation / application / domain / infrastructure` khi phát sinh logic tương ứng. Health và outbox là module kỹ thuật, không tính vào 10 business module. Outbox công bố add(tx,event) cho producer; claim/lease/receipt thuộc chính outbox, không có controller công khai. Thư viện `packages/shared` chưa có utility vì chưa có nhu cầu dùng chung thực tế.
 
 ## Dùng scope ở module tiếp theo
 

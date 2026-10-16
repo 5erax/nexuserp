@@ -6,6 +6,7 @@ import { IdempotencyModule } from './common/idempotency/idempotency.module';
 import { CatalogModule } from './modules/catalog/catalog.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
 import { SalesModule } from './modules/sales/sales.module';
+import { CrmModule } from './modules/crm/crm.module';
 @Module({
   imports: [
     PrismaModule,
@@ -15,6 +16,7 @@ import { SalesModule } from './modules/sales/sales.module';
     CatalogModule,
     InventoryModule,
     SalesModule,
+    CrmModule,
   ],
 })
 export class AppModule {}

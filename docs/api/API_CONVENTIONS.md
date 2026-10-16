@@ -82,4 +82,6 @@ GET `/sales/orders` nhận `branchId`, `customerId`, `status`, `createdFrom`, `c
 
 Các command confirm/cancel/ship/payment, dispatcher outbox và màn hình Sales thuộc các issue tiếp theo của Phase 3; không có endpoint PATCH status chung.
 
+CRM đã có GET/POST `/customers`, GET/PATCH `/customers/:id` và GET `/customers/:id/orders`. Dùng pagination/q chung; danh sách khách có thêm branchId/status/sortBy=name|createdAt. Name/branch bắt buộc khi tạo; branch/creator bất biến khi sửa; không có DELETE, dùng status INACTIVE để lưu trữ. Email trim/lowercase, contact được phép dùng chung giữa nhiều UUID và không tự gộp. History kiểm tra đồng thời CRM read và Sales orders read; áp dụng OWN/BRANCH của Sales trước count/pagination. Không có quyền Sales trả 403 dù đọc được hồ sơ khách. Chi tiết về dữ liệu, quyền và audit xem [CRM](../development/CRM.md).
+
 Phiếu điều chỉnh/tồn đầu kỳ có nhiều command riêng biệt: create dùng 201; post/approve/reject/cancel dùng 200. Khi post trả PENDING_APPROVAL, đó là kết quả thành công của yêu cầu trình duyệt. Sau khi người khác approve, client tạo key mới cho hành động post tiếp theo; dùng lại key cũ sẽ replay PENDING_APPROVAL đã lưu. Giữ key cũ chỉ khi thử lại cùng một hành động có kết quả chưa chắc chắn.

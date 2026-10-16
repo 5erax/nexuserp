@@ -24,4 +24,22 @@ Release changes ACTIVE reservations to RELEASED and subtracts reserved. Consume 
 
 Command transactions use `withTransactionRetry` through the idempotency framework: READ COMMITTED plus explicit locks/conditional updates. Only a confirmed PostgreSQL deadlock/serialization abort (Prisma P2034, or P2010 with the pinned pg adapter's TransactionWriteConflict cause) retries the entire callback, at most three attempts with 10/20ms backoff. It rechecks authorization, reclaims idempotency and repeats all database changes after rollback. Exhaustion returns TRANSACTION_CONFLICT (409); timeouts, lost connections and business failures are not automatically retried. Callbacks must contain database operations only, without irreversible network side effects. See [PostgreSQL deadlocks](https://www.postgresql.org/docs/17/explicit-locking.html#LOCKING-DEADLOCKS).
 
-`reservations.integration-spec.ts` verifies all-or-nothing, exact decimals, duplicate/terminal protection, last-unit contention, reverse SKU ordering, organization isolation, shipment rollback, an actual two-connection deadlock, serialization rollback and bounded retry. The idempotency suite also verifies a retried aborted command leaves one key and one business write. The larger 50–100 contender suite and reconciliation remain #54/#52; no claim of those acceptance results yet.
+`reservations.integration-spec.ts` verifies all-or-nothing, exact decimals, duplicate/terminal protection, last-unit contention, reverse SKU ordering, organization isolation, shipment rollback, an actual two-connection deadlock, serialization rollback and bounded retry. The idempotency suite also verifies a retried aborted command leaves one key and one business write. The larger 50–100 contender suite remains #54; no claim of its acceptance results yet.
+
+## Reconciliation (#52)
+
+`GET /api/v1/inventory/reconciliation` requires `inventory.balances.read` with ORG scope. This is the explicit organization-wide inventory administration grant; role names do not bypass it, and BRANCH grants receive 403. The organization always comes from the authenticated actor. Query parameters are `page` (default 1), `pageSize` (default 20, maximum 100) and optional `warehouseId`; a foreign/missing warehouse returns 404. Active and archived warehouses/SKUs are included because their history still matters.
+
+Each result identifies warehouse, branch and SKU, with exact three-decimal strings `onHand`, `expectedOnHand` (sum of all movements), `reserved` and `expectedReserved` (sum of ACTIVE reservations). It also flags `missingBalance`. A full join detects ledger history missing its aggregate row and nonzero balances without ledger entries; absent aggregate sums are zero. Count and page use one REPEATABLE READ snapshot to avoid false drift/page-count differences during concurrent posting. Results are sorted by warehouse/variant UUID for stable paging. The endpoint only reports differences and never changes balances or history.
+
+Maintenance CLI (requires a privileged database connection, bypasses HTTP/session authentication):
+
+```sh
+pnpm --filter @nexus/api inventory:reconcile <organization-uuid> [page]
+```
+
+It returns JSON for one page of at most 100 differences and a total count. Exit 0 means no differences in the organization; exit 2 means differences exist even if the requested page is empty; exit 1 means invalid arguments, missing organization or a configuration/database failure. Request further pages when total exceeds 100; each request/CLI page takes its own snapshot. `ReconciliationService.check` is the trusted maintenance/test interface; HTTP callers use the permission-checked `list` method.
+
+When drift appears, record the organization/warehouse/SKU, actual/expected values and requestId, then pause posting for that warehouse while investigating. Check immutable movement references, document status, active reservations and transaction/error logs. Do not overwrite `onHand`/`reserved`, delete history, or treat a read report as permission to repair. Corrections require the approved document workflow (#51) and a reviewed cause-specific repair if an aggregate/reservation is corrupt. Re-run reconciliation after the controlled repair and resume writes only when the cause and result are verified.
+
+`reconciliation.integration-spec.ts` exercises HTTP/CLI exit codes, both kinds of drift, missing balance/ledger cases, pagination, exact decimals, current grant changes and cross-organization isolation. Corruption is introduced only into UUID-owned test fixtures and restored/cleaned there; production code remains read-only.

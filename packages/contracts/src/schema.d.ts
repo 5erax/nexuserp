@@ -356,6 +356,22 @@ export interface paths {
         patch: operations["CatalogController_updateVariant"];
         trace?: never;
     };
+    "/api/v1/inventory/reconciliation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReconciliationController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -670,6 +686,30 @@ export interface components {
             lowStockThreshold?: string;
             /** @enum {string} */
             status?: "ACTIVE" | "INACTIVE";
+        };
+        DifferenceData: {
+            /** Format: uuid */
+            warehouseId: string;
+            warehouseName: string;
+            /** Format: uuid */
+            branchId: string;
+            /** Format: uuid */
+            variantId: string;
+            sku: string;
+            variantName: string;
+            /** @example 10.125 */
+            onHand: string;
+            /** @example 10.125 */
+            expectedOnHand: string;
+            /** @example 2.125 */
+            reserved: string;
+            /** @example 2.125 */
+            expectedReserved: string;
+            missingBalance: boolean;
+        };
+        ReconciliationResponse: {
+            data: components["schemas"]["DifferenceData"][];
+            meta: components["schemas"]["PageMeta"];
         };
     };
     responses: never;
@@ -4002,6 +4042,119 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["VariantResponse"];
+                };
+            };
+            /** @description API error; inspect error.code and error.requestId */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description API error; inspect error.code and error.requestId */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description API error; inspect error.code and error.requestId */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description API error; inspect error.code and error.requestId */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description API error; inspect error.code and error.requestId */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description API error; inspect error.code and error.requestId */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description API error; inspect error.code and error.requestId */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description API error; inspect error.code and error.requestId */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description API error; inspect error.code and error.requestId */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description API error; inspect error.code and error.requestId */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    ReconciliationController_list: {
+        parameters: {
+            query?: {
+                page?: number;
+                pageSize?: number;
+                warehouseId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReconciliationResponse"];
                 };
             };
             /** @description API error; inspect error.code and error.requestId */

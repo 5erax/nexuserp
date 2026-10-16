@@ -24,6 +24,8 @@ Quy tắc không cấp vượt quyền cũng áp dụng khi sửa/reset tài kho
 
 Prefix chung `/api/v1`. `manage` là quyền CRUD quản trị được nêu tại hàng tương ứng; read luôn kiểm tra độc lập. Các cặp GET/POST chia quyền riêng, không ngầm suy manage thành read.
 
+API đối soát `GET /inventory/reconciliation` dùng `inventory.balances.read` nhưng chỉ nhận scope ORG, dành cho quản trị tồn kho toàn tổ chức. Scope BRANCH không được chạy đối soát; tên role không thay thế grant. Không thêm endpoint sửa trực tiếp số dư.
+
 | Permission | Endpoint/hành động | Scope hợp lệ | Phase |
 | --- | --- | --- | --- |
 | iam.users.read | GET /users, /users/:id | ORG, BRANCH | 1 |

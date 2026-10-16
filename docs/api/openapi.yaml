@@ -2682,6 +2682,103 @@ paths:
                 $ref: "#/components/schemas/ApiErrorResponse"
       security: *a9
       tags: *a10
+  /api/v1/inventory/reconciliation:
+    get:
+      operationId: ReconciliationController_list
+      parameters:
+        - name: page
+          required: false
+          in: query
+          schema:
+            minimum: 1
+            maximum: 1000000
+            default: 1
+            type: integer
+        - name: pageSize
+          required: false
+          in: query
+          schema:
+            minimum: 1
+            maximum: 100
+            default: 20
+            type: integer
+        - name: warehouseId
+          required: false
+          in: query
+          schema:
+            format: uuid
+            type: string
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReconciliationResponse"
+        "400":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "401":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "409":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "413":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "429":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "500":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "503":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+      security:
+        - cookie: []
+      tags:
+        - inventory
 info:
   title: NexusERP API
   description: NexusERP API. Cookie sessions; unsafe requests require the exact
@@ -3547,3 +3644,59 @@ components:
         status:
           type: string
           enum: *a12
+    DifferenceData:
+      type: object
+      properties:
+        warehouseId:
+          type: string
+          format: uuid
+        warehouseName:
+          type: string
+        branchId:
+          type: string
+          format: uuid
+        variantId:
+          type: string
+          format: uuid
+        sku:
+          type: string
+        variantName:
+          type: string
+        onHand:
+          type: string
+          example: "10.125"
+        expectedOnHand:
+          type: string
+          example: "10.125"
+        reserved:
+          type: string
+          example: "2.125"
+        expectedReserved:
+          type: string
+          example: "2.125"
+        missingBalance:
+          type: boolean
+      required:
+        - warehouseId
+        - warehouseName
+        - branchId
+        - variantId
+        - sku
+        - variantName
+        - onHand
+        - expectedOnHand
+        - reserved
+        - expectedReserved
+        - missingBalance
+    ReconciliationResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/DifferenceData"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+      required:
+        - data
+        - meta

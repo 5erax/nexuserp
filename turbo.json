@@ -29,6 +29,7 @@
         "JWT_SECRET",
         "CSRF_SECRET",
         "API_RATE_LIMIT",
+        "INVENTORY_APPROVAL_THRESHOLD",
         "TRUSTED_PROXY_IP"
       ]
     }

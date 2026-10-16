@@ -122,6 +122,23 @@ describe('API foundation contract', () => {
   });
 });
 describe('environment validation', () => {
+  it('validates the exact nonnegative three-decimal approval threshold', () => {
+    const base = {
+      DATABASE_URL: 'postgresql://fixture:fixture@localhost/nexus_test',
+      JWT_SECRET: 'j'.repeat(32),
+      CSRF_SECRET: 'c'.repeat(32),
+    };
+    expect(parseEnvironment(base).INVENTORY_APPROVAL_THRESHOLD).toBe('10');
+    for (const value of ['0', '0.001', '999999999999999.999'])
+      expect(
+        parseEnvironment({ ...base, INVENTORY_APPROVAL_THRESHOLD: value })
+          .INVENTORY_APPROVAL_THRESHOLD,
+      ).toBe(value);
+    for (const value of ['-1', '1e3', '0.0001', '1000000000000000', '', 'NaN', 10])
+      expect(() => parseEnvironment({ ...base, INVENTORY_APPROVAL_THRESHOLD: value })).toThrow(
+        /INVENTORY_APPROVAL_THRESHOLD/,
+      );
+  });
   it('fails early when DATABASE_URL is missing', () =>
     expect(() => parseEnvironment({})).toThrow(/DATABASE_URL/));
   it('rejects non-postgres URLs and invalid ports', () =>

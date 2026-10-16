@@ -34,6 +34,7 @@ services:
       WEB_ORIGIN: ${WEB_ORIGIN:-https://localhost:3000}
       TRUSTED_PROXY_IP: 172.29.241.10
       API_RATE_LIMIT: ${API_RATE_LIMIT:-300}
+      INVENTORY_APPROVAL_THRESHOLD: ${INVENTORY_APPROVAL_THRESHOLD:-10}
     depends_on: { migrate: { condition: service_completed_successfully } }
     healthcheck:
       test:
@@ -71,6 +72,7 @@ services:
       JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET}
       CSRF_SECRET: ${CSRF_SECRET:?Set CSRF_SECRET}
       WEB_ORIGIN: http://localhost:3000
+      INVENTORY_APPROVAL_THRESHOLD: ${INVENTORY_APPROVAL_THRESHOLD:-10}
     ports: ['127.0.0.1:3001:3001']
     volumes:
       - ./apps/api/src:/workspace/apps/api/src

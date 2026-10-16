@@ -71,3 +71,5 @@ Login giới hạn theo IP và organization/email chuẩn hóa: 10 lần/15 phú
 Thêm field optional tương thích trong v1; thay meaning/type hoặc xóa field cần v2/ADR và migration client. Deprecation phải ghi ngày ngừng, replacement, header `Deprecation`/`Sunset`, giữ tối thiểu 30 ngày trên demo đã công bố. Không đưa endpoint Phase 5 vào OpenAPI MVP.
 
 POST `/sales/orders` gửi `{customerId,branchId,items:[{variantId,quantity:"3"}],note}` cùng CSRF và Idempotency-Key. Thành công 201 với status DRAFT, subtotal/discountTotal/taxTotal/grandTotal là chuỗi như SRS. Confirm trả 200; thiếu hàng trả 409 INSUFFICIENT_STOCK và mọi dòng rollback.
+
+Phiếu điều chỉnh/tồn đầu kỳ có nhiều command riêng biệt: create dùng 201; post/approve/reject/cancel dùng 200. Khi post trả PENDING_APPROVAL, đó là kết quả thành công của yêu cầu trình duyệt. Sau khi người khác approve, client tạo key mới cho hành động post tiếp theo; dùng lại key cũ sẽ replay PENDING_APPROVAL đã lưu. Giữ key cũ chỉ khi thử lại cùng một hành động có kết quả chưa chắc chắn.

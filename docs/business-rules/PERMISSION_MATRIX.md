@@ -41,9 +41,9 @@ API đối soát `GET /inventory/reconciliation` dùng `inventory.balances.read`
 | inventory.warehouses.read | GET /warehouses, /warehouses/:id | ORG, BRANCH | 2 |
 | inventory.warehouses.manage | POST /warehouses, PATCH /warehouses/:id; set default | ORG | 2 |
 | inventory.balances.read | GET /inventory/balances | ORG, BRANCH | 2 |
-| inventory.movements.read | GET /inventory/movements | ORG, BRANCH | 2 |
-| inventory.adjustments.create | POST /inventory/adjustments, opening stock | ORG, BRANCH | 2 |
-| inventory.adjustments.approve | POST /inventory/adjustments/:id/approve | ORG, BRANCH | 2 |
+| inventory.movements.read | GET /inventory/movements, GET /inventory/adjustments, GET /inventory/adjustments/:id | ORG, BRANCH | 2 |
+| inventory.adjustments.create | POST /inventory/adjustments, POST /inventory/adjustments/:id/cancel | ORG, BRANCH | 2 |
+| inventory.adjustments.approve | POST /inventory/adjustments/:id/approve, POST /inventory/adjustments/:id/reject | ORG, BRANCH | 2 |
 | inventory.adjustments.post | POST /inventory/adjustments/:id/post | ORG, BRANCH | 2 |
 | crm.customers.read | GET /customers, /customers/:id | ORG, BRANCH | 3 |
 | crm.customers.create | POST /customers | ORG, BRANCH | 3 |
@@ -64,14 +64,14 @@ API đối soát `GET /inventory/reconciliation` dùng `inventory.balances.read`
 | reporting.exports.create | GET /reports/{sales,inventory}/export | ORG, BRANCH; requires matching report read | 4 |
 | audit.logs.read | GET /audit-logs | ORG, BRANCH; branch scope excludes organization-level events | 1, 4 |
 
-Role shorthand `read` trong bảng persona chỉ các permission có hậu tố `.read` thuộc module đó. BRANCH_MANAGER không được warehouse.manage, products.manage, IAM mutation. WAREHOUSE_STAFF không được adjustments.approve; opening stock chỉ Business Owner/Branch Manager qua command có audit.
+Role shorthand `read` trong bảng persona chỉ các permission có hậu tố `.read` thuộc module đó. BRANCH_MANAGER không được warehouse.manage, products.manage, IAM mutation. WAREHOUSE_STAFF được tạo/ghi sổ OPENING và ADJUSTMENT trong chi nhánh nhưng không được adjustments.approve; phiếu vượt ngưỡng phải chờ người khác có quyền duyệt.
 
 ## Chính sách điều chỉnh và từ chối
 
-Ngưỡng MVP tính theo tổng `abs(quantity_delta)` của mọi dòng: **trên 10 đơn vị** cần người khác có adjustments.approve cùng scope; tối đa 10 được post với lý do. Mỗi phiếu chỉ có một đơn vị cơ sở theo SKU; ngưỡng số lượng demo không đại diện giá trị tiền, chi phí chưa đầy đủ. Người tạo không tự phê duyệt; sửa phiếu hủy approval. OPENING chỉ được post một lần trên mỗi warehouse/variant chưa có movement. Lưu snapshot ngưỡng vào phiếu để thay cấu hình sau này không sửa lịch sử; chưa thêm giao diện cấu hình ngưỡng.
+Ngưỡng MVP tính theo tổng `abs(quantity_delta)` của mọi dòng: **trên 10 đơn vị mặc định** (cấu hình server INVENTORY_APPROVAL_THRESHOLD) cần người khác có adjustments.approve cùng scope; tối đa 10 được post với lý do. Mỗi phiếu chỉ có một đơn vị cơ sở theo SKU; ngưỡng số lượng demo không đại diện giá trị tiền, chi phí chưa đầy đủ. Người tạo không tự phê duyệt. MVP không có sửa dòng phiếu: hủy phiếu chưa posted và tạo phiếu mới nếu cần thay đổi. OPENING chỉ được post một lần trên mỗi warehouse/variant chưa có movement. Lưu snapshot ngưỡng vào phiếu để thay cấu hình sau này không sửa lịch sử; chưa thêm giao diện cấu hình ngưỡng.
 
 Thiếu permission trả 403 `FORBIDDEN`. Có permission nhưng ID ngoài organization/branch/ownership trả 404 `NOT_FOUND`; danh sách lọc trước pagination/count, không trả tổng của scope khác. Thiếu branch access không được fallback toàn tổ chức. Giao diện chỉ ẩn thao tác; backend là nơi thực thi.
 
 ## Kiểm chứng demo
 
-Business Owner tạo chi nhánh và cấp role/access → Branch Manager hoặc Owner mở tồn đầu kỳ → Sales Staff tạo/confirm đơn OWN → Warehouse Staff giao hàng BRANCH → Branch Manager đọc báo cáo/audit BRANCH. Request của Sales Staff A với ID chi nhánh B phải nhận 404. Hai request đồng thời vẫn áp cùng permission/scope trong transaction. Các test dự kiến ở #36–37, #45, #51, #70, #76.
+Business Owner tạo chi nhánh và cấp role/access → Warehouse Staff tạo tồn đầu kỳ, Branch Manager/Owner duyệt nếu vượt ngưỡng → Sales Staff tạo/confirm đơn OWN → Warehouse Staff giao hàng BRANCH → Branch Manager đọc báo cáo/audit BRANCH. Request của Sales Staff A với ID chi nhánh B phải nhận 404. Hai request đồng thời vẫn áp cùng permission/scope trong transaction. Các test dự kiến ở #36–37, #45, #51, #70, #76.

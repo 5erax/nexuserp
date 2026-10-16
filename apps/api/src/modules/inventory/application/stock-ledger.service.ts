@@ -65,6 +65,18 @@ export class StockLedgerService {
         },
       });
     }
+    // The balance update holds the row lock, so a concurrent receipt cannot pass this history check.
+    if (
+      referenceType === 'OPENING' &&
+      (await tx.stockMovement.findFirst({
+        where: { organizationId, warehouseId, variantId },
+        select: { id: true },
+      }))
+    )
+      throw new ConflictException({
+        code: 'MOVEMENT_ALREADY_POSTED',
+        message: 'SKU đã có lịch sử tồn kho, không thể nhập tồn đầu kỳ',
+      });
     try {
       return await tx.stockMovement.create({
         data: { ...input, unitCost: input.unitCost ?? null },

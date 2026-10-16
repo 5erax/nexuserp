@@ -4059,6 +4059,400 @@ paths:
                 $ref: "#/components/schemas/ApiErrorResponse"
       security: *a13
       tags: *a14
+  /api/v1/sales/orders:
+    get:
+      operationId: OrdersController_list
+      parameters:
+        - name: page
+          required: false
+          in: query
+          schema:
+            minimum: 1
+            maximum: 1000000
+            default: 1
+            type: integer
+        - name: pageSize
+          required: false
+          in: query
+          schema:
+            minimum: 1
+            maximum: 100
+            default: 20
+            type: integer
+        - name: q
+          required: false
+          in: query
+          schema:
+            type: string
+        - name: sortOrder
+          required: false
+          in: query
+          schema:
+            default: desc
+            type: string
+            enum:
+              - asc
+              - desc
+        - name: branchId
+          required: false
+          in: query
+          schema:
+            format: uuid
+            type: string
+        - name: customerId
+          required: false
+          in: query
+          schema:
+            format: uuid
+            type: string
+        - name: status
+          required: false
+          in: query
+          schema:
+            type: string
+            enum:
+              - DRAFT
+              - CONFIRMED
+              - CANCELLED
+              - FULFILLED
+        - name: createdFrom
+          required: false
+          in: query
+          schema:
+            format: date-time
+            type: string
+        - name: createdTo
+          required: false
+          in: query
+          schema:
+            format: date-time
+            type: string
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderListResponse"
+        "400":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "401":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "409":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "413":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "429":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "500":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "503":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+      security: &a15
+        - cookie: []
+      tags: &a16
+        - sales
+    post:
+      operationId: OrdersController_create
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: header
+          name: X-CSRF-Token
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateOrderInput"
+      responses:
+        "201":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderResponse"
+        "400":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "401":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "409":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "413":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "429":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "500":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "503":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+      security: *a15
+      tags: *a16
+  /api/v1/sales/orders/{id}:
+    get:
+      operationId: OrdersController_detail
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderResponse"
+        "400":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "401":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "409":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "413":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "429":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "500":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "503":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+      security: *a15
+      tags: *a16
+    patch:
+      operationId: OrdersController_update
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+        - in: header
+          name: X-CSRF-Token
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateOrderInput"
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderResponse"
+        "400":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "401":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "409":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "413":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "429":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "500":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "503":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+      security: *a15
+      tags: *a16
 info:
   title: NexusERP API
   description: NexusERP API. Cookie sessions; unsafe requests require the exact
@@ -4785,7 +5179,7 @@ components:
           maxLength: 2000
         status:
           type: string
-          enum: &a15
+          enum: &a17
             - ACTIVE
             - INACTIVE
       required:
@@ -4806,7 +5200,7 @@ components:
           maxLength: 2000
         status:
           type: string
-          enum: *a15
+          enum: *a17
     VariantData:
       type: object
       properties:
@@ -4887,7 +5281,7 @@ components:
           example: "10.125"
         status:
           type: string
-          enum: &a16
+          enum: &a18
             - ACTIVE
             - INACTIVE
       required:
@@ -4923,7 +5317,7 @@ components:
           example: "10.125"
         status:
           type: string
-          enum: *a16
+          enum: *a18
     DifferenceData:
       type: object
       properties:
@@ -5061,7 +5455,7 @@ components:
           maxLength: 200
         status:
           type: string
-          enum: &a17
+          enum: &a19
             - ACTIVE
             - INACTIVE
         isDefault:
@@ -5081,7 +5475,7 @@ components:
           maxLength: 200
         status:
           type: string
-          enum: *a17
+          enum: *a19
         isDefault:
           type: boolean
     BalanceData:
@@ -5251,12 +5645,12 @@ components:
           format: uuid
         kind:
           type: string
-          enum: &a18
+          enum: &a20
             - OPENING
             - ADJUSTMENT
         status:
           type: string
-          enum: &a19
+          enum: &a21
             - DRAFT
             - PENDING_APPROVAL
             - APPROVED
@@ -5363,10 +5757,10 @@ components:
           format: uuid
         kind:
           type: string
-          enum: *a18
+          enum: *a20
         status:
           type: string
-          enum: *a19
+          enum: *a21
         reason:
           type: string
         decisionReason:
@@ -5484,3 +5878,294 @@ components:
           maxLength: 1000
       required:
         - reason
+    OrderSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        orderNumber:
+          type: string
+        status:
+          type: string
+          enum: &a22
+            - DRAFT
+            - CONFIRMED
+            - CANCELLED
+            - FULFILLED
+        currency:
+          type: string
+          enum: &a23
+            - VND
+        branchId:
+          type: string
+          format: uuid
+        warehouseId:
+          type: string
+          format: uuid
+        customerId:
+          type: string
+          format: uuid
+        customerName:
+          type: string
+        createdBy:
+          type: string
+          format: uuid
+        subtotal:
+          type: string
+        discountType:
+          type: string
+          enum: &a24
+            - NONE
+            - AMOUNT
+            - PERCENT
+        discountValue:
+          type: string
+        discountTotal:
+          type: string
+        taxTotal:
+          type: string
+        grandTotal:
+          type: string
+        note:
+          type: string
+          nullable: true
+        version:
+          type: integer
+        itemCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - orderNumber
+        - status
+        - currency
+        - branchId
+        - warehouseId
+        - customerId
+        - customerName
+        - createdBy
+        - subtotal
+        - discountType
+        - discountValue
+        - discountTotal
+        - taxTotal
+        - grandTotal
+        - note
+        - version
+        - itemCount
+        - createdAt
+        - updatedAt
+    OrderListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrderSummary"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+      required:
+        - data
+        - meta
+    OrderLineData:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        variantId:
+          type: string
+          format: uuid
+        sku:
+          type: string
+        productName:
+          type: string
+        quantity:
+          type: string
+        unitPrice:
+          type: string
+        lineTotal:
+          type: string
+        deliveredQuantity:
+          type: string
+      required:
+        - id
+        - variantId
+        - sku
+        - productName
+        - quantity
+        - unitPrice
+        - lineTotal
+        - deliveredQuantity
+    OrderData:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        orderNumber:
+          type: string
+        status:
+          type: string
+          enum: *a22
+        currency:
+          type: string
+          enum: *a23
+        branchId:
+          type: string
+          format: uuid
+        warehouseId:
+          type: string
+          format: uuid
+        customerId:
+          type: string
+          format: uuid
+        customerName:
+          type: string
+        createdBy:
+          type: string
+          format: uuid
+        subtotal:
+          type: string
+        discountType:
+          type: string
+          enum: *a24
+        discountValue:
+          type: string
+        discountTotal:
+          type: string
+        taxTotal:
+          type: string
+        grandTotal:
+          type: string
+        note:
+          type: string
+          nullable: true
+        version:
+          type: integer
+        itemCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrderLineData"
+      required:
+        - id
+        - orderNumber
+        - status
+        - currency
+        - branchId
+        - warehouseId
+        - customerId
+        - customerName
+        - createdBy
+        - subtotal
+        - discountType
+        - discountValue
+        - discountTotal
+        - taxTotal
+        - grandTotal
+        - note
+        - version
+        - itemCount
+        - createdAt
+        - updatedAt
+        - items
+    OrderResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/OrderData"
+        meta:
+          $ref: "#/components/schemas/ResponseMeta"
+      required:
+        - data
+        - meta
+    OrderLineInput:
+      type: object
+      properties:
+        variantId:
+          type: string
+          format: uuid
+        quantity:
+          type: string
+          pattern: ^(0|[1-9]\d{0,14})(\.\d{1,3})?$
+      required:
+        - variantId
+        - quantity
+    DiscountInput:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - NONE
+            - AMOUNT
+            - PERCENT
+        value:
+          type: string
+          pattern: ^(0|[1-9]\d{0,16})(\.\d{1,2})?$
+      required:
+        - type
+        - value
+    CreateOrderInput:
+      type: object
+      properties:
+        customerId:
+          type: string
+          format: uuid
+        items:
+          minItems: 1
+          maxItems: 100
+          type: array
+          items:
+            $ref: "#/components/schemas/OrderLineInput"
+        discount:
+          $ref: "#/components/schemas/DiscountInput"
+        note:
+          type: string
+          nullable: true
+          maxLength: 2000
+        branchId:
+          type: string
+          format: uuid
+      required:
+        - customerId
+        - items
+        - branchId
+    UpdateOrderInput:
+      type: object
+      properties:
+        customerId:
+          type: string
+          format: uuid
+        items:
+          minItems: 1
+          maxItems: 100
+          type: array
+          items:
+            $ref: "#/components/schemas/OrderLineInput"
+        discount:
+          $ref: "#/components/schemas/DiscountInput"
+        note:
+          type: string
+          nullable: true
+          maxLength: 2000
+        version:
+          type: integer
+          minimum: 0
+          maximum: 2147483646
+      required:
+        - version

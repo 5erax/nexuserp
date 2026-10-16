@@ -1,5 +1,11 @@
 import { createHash, randomBytes } from 'node:crypto';
-import { Inject, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Inject,
+  Injectable,
+  Logger,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { z } from 'zod';
 import { ENVIRONMENT, type Environment } from '../../../config/environment';
@@ -35,6 +41,18 @@ export type RefreshResult =
   | { kind: 'invalid' | 'reused' | 'conflict' };
 @Injectable()
 export class AuthService {
+  async lockActor(tx: Prisma.TransactionClient, actor: Actor) {
+    if (typeof Reflect.get(tx, '$connect') === 'function')
+      throw new Error('Actor locking requires a caller transaction');
+    await tx.$queryRaw`SELECT id FROM organizations WHERE id = ${actor.organizationId}::uuid FOR SHARE`;
+    const current = await this.actorForFamily(tx, {
+      sub: actor.id,
+      organizationId: actor.organizationId,
+      familyId: actor.familyId,
+    });
+    if (current.mustChangePassword) throw new ForbiddenException();
+    return current;
+  }
   constructor(
     private readonly prisma: PrismaService,
     private readonly passwords: PasswordService,

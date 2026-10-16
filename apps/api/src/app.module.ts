@@ -5,6 +5,7 @@ import { IamModule } from './modules/iam/iam.module';
 import { IdempotencyModule } from './common/idempotency/idempotency.module';
 import { CatalogModule } from './modules/catalog/catalog.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
+import { SalesModule } from './modules/sales/sales.module';
 @Module({
   imports: [
     PrismaModule,
@@ -13,6 +14,7 @@ import { InventoryModule } from './modules/inventory/inventory.module';
     IdempotencyModule,
     CatalogModule,
     InventoryModule,
+    SalesModule,
   ],
 })
 export class AppModule {}

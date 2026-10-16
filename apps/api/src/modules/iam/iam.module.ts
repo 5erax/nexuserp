@@ -31,6 +31,6 @@ import { OrganizationController } from './presentation/organization.controller';
     OrganizationService,
     { provide: APP_GUARD, useClass: SecurityGuard },
   ],
-  exports: [OrganizationRepository, AuthService, PasswordService],
+  exports: [OrganizationRepository, AuthService, PasswordService, OrganizationService],
 })
 export class IamModule {}

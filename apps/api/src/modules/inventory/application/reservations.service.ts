@@ -19,6 +19,16 @@ const conflict = (code: string, message: string) => new ConflictException({ code
 @Injectable()
 export class ReservationsService {
   constructor(private readonly ledger: StockLedgerService) {}
+  async hasForOrder(tx: Prisma.TransactionClient, organizationId: string, referenceId: string) {
+    if (typeof Reflect.get(tx, '$connect') === 'function')
+      throw new Error('Reservations require a caller transaction');
+    return Boolean(
+      await tx.stockReservation.findFirst({
+        where: { organizationId, referenceId },
+        select: { id: true },
+      }),
+    );
+  }
 
   private async lockReference(tx: Prisma.TransactionClient, input: Selection) {
     if (typeof Reflect.get(tx, '$connect') === 'function')

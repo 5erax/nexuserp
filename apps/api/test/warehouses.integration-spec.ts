@@ -17,6 +17,7 @@ import { WarehousesService } from '../src/modules/inventory/application/warehous
 import { AuditService } from '../src/modules/audit/application/audit.service';
 import { cleanupInventory } from './fixtures/cleanup-inventory';
 import { cleanupIam } from './fixtures/cleanup-iam';
+import { reservationFixture } from './fixtures/reservation-order';
 
 describe('Warehouse management and scoped Inventory HTTP reads', () => {
   let app: INestApplication, prisma: PrismaService;
@@ -182,14 +183,13 @@ describe('Warehouse management and scoped Inventory HTTP reads', () => {
           unitCost: null,
         }),
       );
-    await prisma.$transaction((tx) =>
-      app.get(ReservationsService).reserve(tx, {
-        organizationId: org,
-        warehouseId: warehouseA,
-        referenceId: randomUUID(),
-        items: [{ variantId: variant, quantity: '2.125' }],
-      }),
-    );
+    const reservation = await reservationFixture(prisma, {
+      organizationId: org,
+      warehouseId: warehouseA,
+      referenceId: randomUUID(),
+      items: [{ variantId: variant, quantity: '2.125' }],
+    });
+    await prisma.$transaction((tx) => app.get(ReservationsService).reserve(tx, reservation));
   });
   afterAll(async () => {
     if (prisma && org && other) {

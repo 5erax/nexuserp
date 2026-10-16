@@ -16,6 +16,7 @@ import { AuthService } from '../src/modules/iam/application/auth.service';
 import { bootstrapIam } from '../src/modules/iam/infrastructure/bootstrap-iam';
 import { cleanupInventory } from './fixtures/cleanup-inventory';
 import { cleanupIam } from './fixtures/cleanup-iam';
+import { reservationFixture } from './fixtures/reservation-order';
 
 describe('Inventory reconciliation HTTP and CLI', () => {
   let app: INestApplication, prisma: PrismaService, reconciliation: ReconciliationService;
@@ -153,14 +154,13 @@ describe('Inventory reconciliation HTTP and CLI', () => {
     };
     first = await makeVariant('RECON-A', '10.125');
     second = await makeVariant('RECON-B', '5');
-    await prisma.$transaction((tx) =>
-      app.get(ReservationsService).reserve(tx, {
-        organizationId: org,
-        warehouseId: warehouse,
-        referenceId: randomUUID(),
-        items: [{ variantId: first, quantity: '2.125' }],
-      }),
-    );
+    const reservation = await reservationFixture(prisma, {
+      organizationId: org,
+      warehouseId: warehouse,
+      referenceId: randomUUID(),
+      items: [{ variantId: first, quantity: '2.125' }],
+    });
+    await prisma.$transaction((tx) => app.get(ReservationsService).reserve(tx, reservation));
   });
   afterAll(async () => {
     if (prisma && org && other) {

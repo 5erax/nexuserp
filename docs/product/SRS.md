@@ -442,7 +442,7 @@ erDiagram
 
 Lưu ý thiết kế: Đây là ERD logic rút gọn để nhìn được quan hệ. Bản schema triển khai phải bổ sung các bảng `stock_adjustments`, `stock_transfers`, `stock_transfer_items`, `idempotency_keys`, `audit_logs`, `outbox_events`, `refresh_families`, `refresh_sessions`, và các khóa ghép để không thể tham chiếu sai tổ chức. Bảng chuyển kho chỉ thêm ở Phase 5.
 
-Quan hệ reservation → dòng đơn trong sơ đồ là đích Phase 3. Phase 2 chưa có cột/FK `order_item_id`; #58 thêm quan hệ sau khi tạo bảng Sales, kiểm tra dữ liệu và cập nhật fixture. Tuân theo [kế hoạch migration reservation](../database/RESERVATION_MIGRATION_PLAN.md). Kho của đơn được snapshot từ kho mặc định cùng chi nhánh theo [ADR-0011](../adr/0011-warehouse-selection-for-orders.md).
+Quan hệ reservation → dòng đơn nằm trong migration schema Phase 3 (#58), sau khi tạo bảng Sales và preflight dữ liệu Phase 2. Fixture test dùng dòng đơn thật; command Sales được triển khai tiếp trong Phase 3. Tuân theo [kế hoạch migration reservation](../database/RESERVATION_MIGRATION_PLAN.md). Kho của đơn được snapshot từ kho mặc định cùng chi nhánh theo [ADR-0011](../adr/0011-warehouse-selection-for-orders.md).
 
 `STOCK_MOVEMENTS` nên là nhật ký append-only với định danh chứng từ rõ ràng. `STOCK_BALANCES` chỉ là bảng tổng hợp được cập nhật nguyên tử, không phải lịch sử giao dịch.
 

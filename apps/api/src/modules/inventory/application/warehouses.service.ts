@@ -209,7 +209,6 @@ export class WarehousesService {
         isDefault = status === 'INACTIVE' ? false : (input.isDefault ?? before.isDefault);
       if (status === 'ACTIVE') await this.branch(tx, actor.organizationId, before.branchId);
       if (before.status === 'ACTIVE' && status === 'INACTIVE') {
-        // shortcut: add the CONFIRMED-order guard when Sales schema lands in #58.
         if (
           await tx.stockReservation.findFirst({
             where: {
@@ -223,6 +222,16 @@ export class WarehousesService {
           throw new ConflictException({
             code: 'WAREHOUSE_HAS_RESERVATIONS',
             message: 'Kho còn hàng đang giữ, chưa thể ngừng hoạt động',
+          });
+        if (
+          await tx.salesOrder.findFirst({
+            where: { organizationId: actor.organizationId, warehouseId: id, status: 'CONFIRMED' },
+            select: { id: true },
+          })
+        )
+          throw new ConflictException({
+            code: 'WAREHOUSE_HAS_ORDERS',
+            message: 'Kho còn đơn đã xác nhận, chưa thể ngừng hoạt động',
           });
       }
       if (isDefault) await this.clearDefault(tx, actor, before.branchId, id, context);

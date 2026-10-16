@@ -10,7 +10,9 @@ import { Prisma } from '../../../generated/prisma/client';
 import { StockLedgerService } from './stock-ledger.service';
 
 type Selection = { organizationId: string; warehouseId: string; referenceId: string };
-export type ReserveInput = Selection & { items: { variantId: string; quantity: string }[] };
+export type ReserveInput = Selection & {
+  items: { variantId: string; quantity: string; orderItemId: string }[];
+};
 export type ConsumeInput = Selection & { createdBy: string; shipmentId: string };
 const conflict = (code: string, message: string) => new ConflictException({ code, message });
 
@@ -38,6 +40,7 @@ export class ReservationsService {
       )
       .digest()
       .readBigInt64BE();
+    await tx.$queryRaw`SELECT id FROM sales_orders WHERE organization_id = ${input.organizationId}::uuid AND id = ${input.referenceId}::uuid FOR SHARE`;
     await tx.$queryRaw`SELECT pg_advisory_xact_lock(${key}::bigint)::text`;
   }
 
@@ -78,6 +81,8 @@ export class ReservationsService {
           !item ||
           typeof item.variantId !== 'string' ||
           !isUUID(item.variantId) ||
+          typeof item.orderItemId !== 'string' ||
+          !isUUID(item.orderItemId) ||
           typeof item.quantity !== 'string' ||
           !/^\d{1,15}(?:\.\d{1,3})?$/.test(item.quantity) ||
           new Prisma.Decimal(item.quantity).isZero(),
@@ -108,6 +113,28 @@ export class ReservationsService {
       (item) => !rows.some((row) => row.variantId === item.variantId.toLowerCase()),
     );
     if (missing) return this.insufficient(tx, missing.variantId, missing.quantity);
+    const orderItems = await tx.salesOrderItem.findMany({
+      where: {
+        organizationId,
+        orderId: referenceId,
+        id: { in: items.map((item) => item.orderItemId) },
+        order: { warehouseId, status: { in: ['DRAFT', 'CONFIRMED'] } },
+      },
+      select: { id: true, variantId: true, quantity: true },
+    });
+    if (orderItems.length !== items.length) throw new NotFoundException();
+    if (
+      items.some(
+        (item) =>
+          !orderItems.some(
+            (row) =>
+              row.id === item.orderItemId.toLowerCase() &&
+              row.variantId === item.variantId.toLowerCase() &&
+              row.quantity.equals(item.quantity),
+          ),
+      )
+    )
+      throw new BadRequestException('Giữ hàng phải khớp dòng đơn');
     await this.lockBalances(
       tx,
       organizationId,
@@ -122,7 +149,14 @@ export class ReservationsService {
       if (!changed) return this.insufficient(tx, row.variantId, quantity, row.id);
       reservations.push(
         await tx.stockReservation.create({
-          data: { organizationId, balanceId: row.id, referenceId, quantity },
+          data: {
+            organizationId,
+            balanceId: row.id,
+            referenceId,
+            quantity,
+            orderItemId: items.find((item) => item.variantId.toLowerCase() === row.variantId)!
+              .orderItemId,
+          },
         }),
       );
     }

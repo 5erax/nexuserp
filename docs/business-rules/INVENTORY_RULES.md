@@ -13,7 +13,7 @@ Nguồn [SRS](../product/SRS.md), các ADR đã Accepted và [ma trận quyền]
 | INV-007 | Điều chỉnh tồn kho yêu cầu lý do; vượt ngưỡng phải được phê duyệt | 2 | CHECK reason/actor/timestamp; tổng abs delta vượt snapshot ngưỡng server, người khác duyệt | apps/api/test/inventory-schema.integration-spec.ts; apps/api/test/adjustments.integration-spec.ts | Policy và HTTP command; CI là gate trước khi gộp |
 | INV-008 | Không cho phép sửa trực tiếp `on_hand` từ CRUD API | 2 | chỉ StockLedgerService ghi onHand, test cấu trúc chặn đường ghi khác | apps/api/test/stock-ownership.spec.ts; apps/api/test/catalog.integration-spec.ts | Ledger ownership đã kiểm chứng; Inventory không có CRUD số dư |
 | INV-009 | Reservation phải được giải phóng khi hủy đơn hoặc hết hạn hợp lệ | 3 | Inventory release trong caller transaction, cancel Sales #64, expiry sau MVP | apps/api/test/reservations.integration-spec.ts; planned:#64 | Release/consume đã kiểm chứng; cancel đơn còn lại |
-| INV-010 | Không được sửa SKU của sản phẩm đã có giao dịch nếu làm sai lịch sử | 2 | Catalog lock/check + trigger cấm đổi SKU đã có stock movement; FK RESTRICT | apps/api/test/inventory-schema.integration-spec.ts; apps/api/test/catalog.integration-spec.ts; planned:#58 cho Sales | API/DB bảo vệ stock history đã kiểm chứng; lịch sử đơn theo Phase 3 |
+| INV-010 | Không được sửa SKU của sản phẩm đã có giao dịch nếu làm sai lịch sử | 2 | Catalog lock/check + trigger cấm đổi SKU đã có stock movement; FK RESTRICT | apps/api/test/inventory-schema.integration-spec.ts; apps/api/test/catalog.integration-spec.ts; apps/api/test/sales-schema.integration-spec.ts | API/DB bảo vệ stock và Sales history |
 
 Quy tắc bổ sung: Inventory sở hữu warehouse, default warehouse duy nhất trong branch; unit_cost nullable nonnegative ở OPENING/ADJUSTMENT_IN (NULL khác 0). Post shipment giảm cả on_hand/reserved và tiêu thụ reservation. document_sequences do platform sở hữu để cấp số chứng từ trong transaction; UNIQUE là lớp bảo vệ cuối. Reconciliation so sánh sum movements với on_hand và sum ACTIVE reservations với reserved, không tự sửa ledger (#52).
 
@@ -23,7 +23,7 @@ Reservation dùng READ COMMITTED, khóa reference rồi khóa balance theo ID t�
 
 ## Thứ tự khóa và transaction
 
-Caller mở một interactive transaction READ COMMITTED; Inventory không commit riêng. Reservation khóa advisory theo organization/reference trước, sau đó khóa các balance theo ID tăng dần (`FOR NO KEY UPDATE`). Conditional UPDATE vẫn kiểm tra available tại thời điểm ghi; đọc available trước đó chỉ để hiển thị. Hai người cùng tranh đơn vị cuối không thể cùng vượt điều kiện này. CHECK `0 <= reserved <= on_hand` là lớp bảo vệ cuối, không thay thế atomic guard. Test mutation cố bỏ guard và phải bị test tranh chấp phát hiện.
+Caller mở một interactive transaction READ COMMITTED; Inventory không commit riêng. Reservation khóa shared order theo reference trước để giữ snapshot dòng đơn, rồi khóa advisory theo organization/reference, sau đó khóa các balance theo ID tăng dần (`FOR NO KEY UPDATE`). Conditional UPDATE vẫn kiểm tra available tại thời điểm ghi; đọc available trước đó chỉ để hiển thị. Hai người cùng tranh đơn vị cuối không thể cùng vượt điều kiện này. CHECK `0 <= reserved <= on_hand` là lớp bảo vệ cuối, không thay thế atomic guard. Test mutation cố bỏ guard và phải bị test tranh chấp phát hiện.
 
 Adjustment khóa organization FOR SHARE để giữ ổn định quyền/branch access, rồi khóa phiếu FOR UPDATE và reauthorize phiên hiện tại. Ghi sổ giữ khóa shared warehouse/branch ACTIVE, khóa balance hiện có theo ID tăng dần, xử lý SKU chưa có balance theo thứ tự UUID. Ledger tạo balance bằng INSERT ON CONFLICT rồi UPDATE nguyên tử. Trigger dòng cũng khóa parent, nên sửa dòng trực tiếp không thể chen vào ghi sổ. Tất cả giữ khóa đến khi commit/rollback; không gọi dịch vụ mạng trong transaction.
 
@@ -40,7 +40,7 @@ sequenceDiagram
     participant DB as PostgreSQL
     C->>DB: BEGIN READ COMMITTED
     C->>R: reserve(tx, reference, items)
-    R->>DB: Advisory lock reference
+    R->>DB: Shared lock order, advisory lock reference
     R->>DB: Lock balances ORDER BY id
     loop Mỗi SKU
         R->>DB: UPDATE reserved + qty WHERE available >= qty

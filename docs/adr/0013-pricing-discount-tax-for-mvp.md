@@ -15,7 +15,7 @@ SRS đề cập price list nhưng chưa có mô hình đó. Chọn giá biến t
 - Một đơn có tối đa một giảm giá: `AMOUNT` nguyên đồng hoặc `PERCENT` từ 0 đến 100 (tối đa 2 chữ số thập phân). Không cộng dồn giảm giá dòng và đơn. `discountTotal = round(subtotal * percent / 100)` hoặc số tiền hợp lệ, không vượt subtotal.
 - `taxTotal = 0`, `grandTotal = subtotal - discountTotal`. Đây là quy tắc demo, không phải tính thuế pháp định; API từ chối giá trị thuế khác 0.
 - Giá/tổng do client cố truyền bị DTO từ chối; request chỉ có variant, quantity và yêu cầu giảm giá được cấp quyền. API trả/nhận Decimal bằng chuỗi, không chuyển qua JavaScript `number` để tính tiền.
-- `NUMERIC(20,6)` cho đơn giá/số lượng; `NUMERIC(20,0)` cho tổng tiền VND. DTO kiểm tra miền giá trị và kết quả để không vượt độ chính xác database.
+- Giá bán/đơn giá snapshot và tổng tiền VND dùng `NUMERIC(20,0)`; số lượng dùng `NUMERIC(18,3)`, thống nhất Catalog/Inventory và quy ước API. Chỉ chi phí nhập tùy chọn dùng `NUMERIC(20,6)` theo ADR-0012. DTO kiểm tra miền giá trị và kết quả để không vượt độ chính xác database.
 
 ## Hệ quả
 

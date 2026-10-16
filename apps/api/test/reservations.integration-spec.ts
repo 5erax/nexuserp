@@ -8,6 +8,7 @@ import { ReservationsService } from '../src/modules/inventory/application/reserv
 import { PasswordService } from '../src/modules/iam/application/password.service';
 import { cleanupInventory } from './fixtures/cleanup-inventory';
 import { cleanupIam } from './fixtures/cleanup-iam';
+import { reservationFixture, type ReservationDraft } from './fixtures/reservation-order';
 
 describe('INV-002/003/009 Atomic reservations on PostgreSQL', () => {
   let prisma: PrismaService;
@@ -97,8 +98,10 @@ describe('INV-002/003/009 Atomic reservations on PostgreSQL', () => {
       where: { organizationId: org, variantId: { in: ids } },
       orderBy: { variantId: 'asc' },
     });
-  const reserve = (input: Parameters<ReservationsService['reserve']>[1]) =>
-    withTransactionRetry(prisma, (tx) => service.reserve(tx, input));
+  const reserve = async (input: ReservationDraft) => {
+    const linked = await reservationFixture(prisma, input);
+    return withTransactionRetry(prisma, (tx) => service.reserve(tx, linked));
+  };
   const release = (input: Parameters<ReservationsService['release']>[1]) =>
     withTransactionRetry(prisma, (tx) => service.release(tx, input));
   const consume = (input: Parameters<ReservationsService['consume']>[1]) =>
@@ -146,7 +149,16 @@ describe('INV-002/003/009 Atomic reservations on PostgreSQL', () => {
       }),
     );
     const versions = new Map((await balances(ids)).map((row) => [row.id, row.version]));
-    for (const variantId of [ids[1]!, randomUUID()]) {
+    const missing = await prisma.productVariant.create({
+      data: {
+        organizationId: org,
+        productId: product,
+        sku: randomUUID().toUpperCase(),
+        name: 'No balance',
+        sellingPrice: '1',
+      },
+    });
+    for (const variantId of [ids[1]!, missing.id]) {
       const command = selection();
       await expect(
         reserve({
@@ -259,7 +271,7 @@ describe('INV-002/003/009 Atomic reservations on PostgreSQL', () => {
   });
   it('rejects malformed quantities, repeated variants and cross-organization lookups', async () => {
     const [id] = await stock('5'),
-      item = { variantId: id!, quantity: '1' },
+      item = { variantId: id!, quantity: '1', orderItemId: randomUUID() },
       command = selection();
     for (const items of [
       [],
@@ -267,12 +279,16 @@ describe('INV-002/003/009 Atomic reservations on PostgreSQL', () => {
       [item, { ...item, variantId: id!.toUpperCase() }],
       ...['0', '-1', '0.0001', 'NaN', 'Infinity', '1e2'].map((quantity) => [{ ...item, quantity }]),
     ])
-      await expect(reserve({ ...command, items })).rejects.toMatchObject({ status: 400 });
+      await expect(
+        withTransactionRetry(prisma, (tx) => service.reserve(tx, { ...command, items })),
+      ).rejects.toMatchObject({ status: 400 });
     await expect(service.reserve(prisma, { ...command, items: [item] })).rejects.toThrow(
       'caller transaction',
     );
     await expect(
-      reserve({ ...command, organizationId: other, items: [item] }),
+      withTransactionRetry(prisma, (tx) =>
+        service.reserve(tx, { ...command, organizationId: other, items: [item] }),
+      ),
     ).rejects.toMatchObject({
       response: { code: 'INSUFFICIENT_STOCK', details: { available: '0.000' } },
     });
@@ -286,8 +302,12 @@ describe('INV-002/003/009 Atomic reservations on PostgreSQL', () => {
     const [id] = await stock('2'),
       command = selection();
     let attempts = 0;
+    const input = await reservationFixture(prisma, {
+      ...command,
+      items: [{ variantId: id!, quantity: '1' }],
+    });
     await withTransactionRetry(prisma, async (tx) => {
-      await service.reserve(tx, { ...command, items: [{ variantId: id!, quantity: '1' }] });
+      await service.reserve(tx, input);
       if (++attempts === 1)
         await tx.$executeRaw`DO $$ BEGIN RAISE EXCEPTION 'synthetic conflict' USING ERRCODE = '40001'; END $$`;
     });
@@ -341,10 +361,14 @@ describe('INV-002/003/009 Atomic reservations on PostgreSQL', () => {
     const [id] = await stock('2'),
       command = selection();
     let attempts = 0;
+    const input = await reservationFixture(prisma, {
+      ...command,
+      items: [{ variantId: id!, quantity: '1' }],
+    });
     await expect(
       withTransactionRetry(prisma, async (tx) => {
         attempts++;
-        await service.reserve(tx, { ...command, items: [{ variantId: id!, quantity: '1' }] });
+        await service.reserve(tx, input);
         await tx.$executeRaw`DO $$ BEGIN RAISE EXCEPTION 'synthetic conflict' USING ERRCODE = '40P01'; END $$`;
       }),
     ).rejects.toMatchObject({ response: { code: 'TRANSACTION_CONFLICT' } });
@@ -356,10 +380,14 @@ describe('INV-002/003/009 Atomic reservations on PostgreSQL', () => {
       }),
     ).toBe(0);
     attempts = 0;
+    const shortage = await reservationFixture(prisma, {
+      ...selection(),
+      items: [{ variantId: id!, quantity: '3' }],
+    });
     await expect(
       withTransactionRetry(prisma, async (tx) => {
         attempts++;
-        return service.reserve(tx, { ...command, items: [{ variantId: id!, quantity: '3' }] });
+        return service.reserve(tx, shortage);
       }),
     ).rejects.toMatchObject({ response: { code: 'INSUFFICIENT_STOCK' } });
     expect(attempts).toBe(1);

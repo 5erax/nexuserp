@@ -2779,6 +2779,626 @@ paths:
         - cookie: []
       tags:
         - inventory
+  /api/v1/warehouses:
+    get:
+      operationId: InventoryController_list
+      parameters:
+        - name: page
+          required: false
+          in: query
+          schema:
+            minimum: 1
+            maximum: 1000000
+            default: 1
+            type: integer
+        - name: pageSize
+          required: false
+          in: query
+          schema:
+            minimum: 1
+            maximum: 100
+            default: 20
+            type: integer
+        - name: q
+          required: false
+          in: query
+          schema:
+            type: string
+        - name: sortOrder
+          required: false
+          in: query
+          schema:
+            default: desc
+            type: string
+            enum:
+              - asc
+              - desc
+        - name: branchId
+          required: false
+          in: query
+          schema:
+            format: uuid
+            type: string
+        - name: status
+          required: false
+          in: query
+          schema:
+            type: string
+            enum:
+              - ACTIVE
+              - INACTIVE
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WarehouseListResponse"
+        "400":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "401":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "409":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "413":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "429":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "500":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "503":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+      security: &a11
+        - cookie: []
+      tags: &a12
+        - inventory
+    post:
+      operationId: InventoryController_create
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: header
+          name: X-CSRF-Token
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateWarehouseInput"
+      responses:
+        "201":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WarehouseResponse"
+        "400":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "401":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "409":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "413":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "429":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "500":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "503":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+      security: *a11
+      tags: *a12
+  /api/v1/warehouses/{id}:
+    get:
+      operationId: InventoryController_detail
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WarehouseResponse"
+        "400":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "401":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "409":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "413":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "429":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "500":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "503":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+      security: *a11
+      tags: *a12
+    patch:
+      operationId: InventoryController_update
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+        - in: header
+          name: X-CSRF-Token
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateWarehouseInput"
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WarehouseResponse"
+        "400":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "401":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "409":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "413":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "429":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "500":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "503":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+      security: *a11
+      tags: *a12
+  /api/v1/inventory/balances:
+    get:
+      operationId: InventoryController_balances
+      parameters:
+        - name: page
+          required: false
+          in: query
+          schema:
+            minimum: 1
+            maximum: 1000000
+            default: 1
+            type: integer
+        - name: pageSize
+          required: false
+          in: query
+          schema:
+            minimum: 1
+            maximum: 100
+            default: 20
+            type: integer
+        - name: q
+          required: false
+          in: query
+          schema:
+            type: string
+        - name: sortOrder
+          required: false
+          in: query
+          schema:
+            default: desc
+            type: string
+            enum:
+              - asc
+              - desc
+        - name: warehouseId
+          required: false
+          in: query
+          schema:
+            format: uuid
+            type: string
+        - name: variantId
+          required: false
+          in: query
+          schema:
+            format: uuid
+            type: string
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BalanceListResponse"
+        "400":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "401":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "409":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "413":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "429":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "500":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "503":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+      security: *a11
+      tags: *a12
+  /api/v1/inventory/movements:
+    get:
+      operationId: InventoryController_movements
+      parameters:
+        - name: q
+          required: false
+          in: query
+          schema:
+            type: string
+        - name: warehouseId
+          required: false
+          in: query
+          schema:
+            format: uuid
+            type: string
+        - name: variantId
+          required: false
+          in: query
+          schema:
+            format: uuid
+            type: string
+        - name: limit
+          required: false
+          in: query
+          schema:
+            minimum: 1
+            maximum: 100
+            default: 20
+            type: integer
+        - name: cursor
+          required: false
+          in: query
+          schema:
+            type: string
+        - name: referenceType
+          required: false
+          in: query
+          schema:
+            type: string
+            enum:
+              - OPENING
+              - ADJUSTMENT_IN
+              - ADJUSTMENT_OUT
+              - SHIPMENT_OUT
+        - name: referenceId
+          required: false
+          in: query
+          schema:
+            format: uuid
+            type: string
+        - name: from
+          required: false
+          in: query
+          schema:
+            format: date-time
+            type: string
+        - name: to
+          required: false
+          in: query
+          schema:
+            format: date-time
+            type: string
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MovementListResponse"
+        "400":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "401":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "403":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "404":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "409":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "413":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "422":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "429":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "500":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "503":
+          description: API error; inspect error.code and error.requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+      security: *a11
+      tags: *a12
 info:
   title: NexusERP API
   description: NexusERP API. Cookie sessions; unsafe requests require the exact
@@ -3505,7 +4125,7 @@ components:
           maxLength: 2000
         status:
           type: string
-          enum: &a11
+          enum: &a13
             - ACTIVE
             - INACTIVE
       required:
@@ -3526,7 +4146,7 @@ components:
           maxLength: 2000
         status:
           type: string
-          enum: *a11
+          enum: *a13
     VariantData:
       type: object
       properties:
@@ -3607,7 +4227,7 @@ components:
           example: "10.125"
         status:
           type: string
-          enum: &a12
+          enum: &a14
             - ACTIVE
             - INACTIVE
       required:
@@ -3643,7 +4263,7 @@ components:
           example: "10.125"
         status:
           type: string
-          enum: *a12
+          enum: *a14
     DifferenceData:
       type: object
       properties:
@@ -3697,6 +4317,261 @@ components:
             $ref: "#/components/schemas/DifferenceData"
         meta:
           $ref: "#/components/schemas/PageMeta"
+      required:
+        - data
+        - meta
+    WarehouseData:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        branchId:
+          type: string
+          format: uuid
+        branchName:
+          type: string
+        code:
+          type: string
+        name:
+          type: string
+        status:
+          type: string
+          enum:
+            - ACTIVE
+            - INACTIVE
+        isDefault:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - branchId
+        - branchName
+        - code
+        - name
+        - status
+        - isDefault
+        - createdAt
+        - updatedAt
+    WarehouseListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/WarehouseData"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+      required:
+        - data
+        - meta
+    RequestMeta:
+      type: object
+      properties:
+        requestId:
+          type: string
+      required:
+        - requestId
+    WarehouseResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/WarehouseData"
+        meta:
+          $ref: "#/components/schemas/RequestMeta"
+      required:
+        - data
+        - meta
+    CreateWarehouseInput:
+      type: object
+      properties:
+        branchId:
+          type: string
+          format: uuid
+        code:
+          type: string
+          maxLength: 32
+        name:
+          type: string
+          maxLength: 200
+        status:
+          type: string
+          enum: &a15
+            - ACTIVE
+            - INACTIVE
+        isDefault:
+          type: boolean
+      required:
+        - branchId
+        - code
+        - name
+    UpdateWarehouseInput:
+      type: object
+      properties:
+        code:
+          type: string
+          maxLength: 32
+        name:
+          type: string
+          maxLength: 200
+        status:
+          type: string
+          enum: *a15
+        isDefault:
+          type: boolean
+    BalanceData:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        warehouseId:
+          type: string
+          format: uuid
+        warehouseName:
+          type: string
+        branchId:
+          type: string
+          format: uuid
+        variantId:
+          type: string
+          format: uuid
+        sku:
+          type: string
+        variantName:
+          type: string
+        productName:
+          type: string
+        onHand:
+          type: string
+          example: "10.125"
+        reserved:
+          type: string
+          example: "2.125"
+        available:
+          type: string
+          example: "8.000"
+        lowStockThreshold:
+          type: string
+          example: "8.000"
+        lowStock:
+          type: boolean
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - warehouseId
+        - warehouseName
+        - branchId
+        - variantId
+        - sku
+        - variantName
+        - productName
+        - onHand
+        - reserved
+        - available
+        - lowStockThreshold
+        - lowStock
+        - updatedAt
+    BalanceListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/BalanceData"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+      required:
+        - data
+        - meta
+    MovementData:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        warehouseId:
+          type: string
+          format: uuid
+        warehouseName:
+          type: string
+        branchId:
+          type: string
+          format: uuid
+        variantId:
+          type: string
+          format: uuid
+        sku:
+          type: string
+        variantName:
+          type: string
+        productName:
+          type: string
+        quantityDelta:
+          type: string
+          example: "-1.125"
+        unitCost:
+          type: string
+          nullable: true
+          example: "1000.123456"
+        referenceType:
+          type: string
+          enum:
+            - OPENING
+            - ADJUSTMENT_IN
+            - ADJUSTMENT_OUT
+            - SHIPMENT_OUT
+        referenceId:
+          type: string
+          format: uuid
+        createdBy:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - warehouseId
+        - warehouseName
+        - branchId
+        - variantId
+        - sku
+        - variantName
+        - productName
+        - quantityDelta
+        - unitCost
+        - referenceType
+        - referenceId
+        - createdBy
+        - createdAt
+    MovementMeta:
+      type: object
+      properties:
+        requestId:
+          type: string
+        nextCursor:
+          type: string
+          nullable: true
+      required:
+        - requestId
+        - nextCursor
+    MovementListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/MovementData"
+        meta:
+          $ref: "#/components/schemas/MovementMeta"
       required:
         - data
         - meta

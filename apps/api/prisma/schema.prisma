@@ -314,6 +314,7 @@ model StockMovement {
   @@unique([organizationId, warehouseId, variantId], where: raw("((reference_type)::text = 'OPENING'::text)"), map: "stock_movements_one_opening")
   @@index([organizationId, warehouseId, createdAt, id])
   @@index([organizationId, variantId, createdAt, id])
+  @@index([organizationId, referenceId])
   @@map("stock_movements")
 }
 

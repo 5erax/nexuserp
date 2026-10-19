@@ -336,4 +336,70 @@ describe('Catalog HTTP API on PostgreSQL', () => {
       await prisma.productVariant.count({ where: { organizationId: org, sku: input.sku } }),
     ).toBe(1);
   });
+  it.each(['đ'.repeat(2000), '🌷'.repeat(2000), String.fromCharCode(1).repeat(2000)])(
+    'updates valid long descriptions with bounded, lossless audit rows',
+    async (description) => {
+      const created = await call('post', '/products')
+        .send({ name: 'Long description', description })
+        .expect(201);
+      const id = created.body.data.id as string;
+      const next = String.fromCharCode(2).repeat(2000);
+      await call('patch', `/products/${id}`).send({ name: 'Renamed' }).expect(200);
+      await call('patch', `/products/${id}`).send({ status: 'INACTIVE' }).expect(200);
+      await call('patch', `/products/${id}`).send({ description: next }).expect(200);
+      await call('patch', `/products/${id}`).send({ description: null }).expect(200);
+      expect((await call('get', `/products/${id}`).expect(200)).body.data).toMatchObject({
+        name: 'Renamed',
+        status: 'INACTIVE',
+        description: null,
+      });
+      const rows = await prisma.auditLog.findMany({
+        where: { organizationId: org, entityId: id },
+      });
+      const changes = rows.filter((row) => row.action === 'catalog.product_description_updated');
+      expect(changes.map((row) => row.changes)).toEqual(
+        expect.arrayContaining([
+          { before: { description } },
+          { after: { description: next } },
+          { before: { description: next } },
+          { after: { description: null } },
+        ]),
+      );
+      expect(changes).toHaveLength(4);
+      expect(new Set(changes.map((row) => row.requestId)).size).toBe(2);
+      const [size] = await prisma.$queryRaw<{ bytes: number }[]>`
+        SELECT max(octet_length(changes::text)) AS bytes FROM audit_logs
+        WHERE organization_id = ${org}::uuid AND entity_id = ${id}::uuid`;
+      expect(size!.bytes).toBeLessThanOrEqual(16384);
+    },
+  );
+  it('rolls back the product and earlier audit rows if the final description audit fails', async () => {
+    const before = await call('post', '/products')
+      .send({ name: 'Rollback description', description: 'Original' })
+      .expect(201);
+    const id = before.body.data.id as string;
+    const where = { organizationId: org, entityId: id };
+    const count = await prisma.auditLog.count({ where });
+    const audit = app.get(AuditService),
+      original = audit.record.bind(audit);
+    const spy = jest.spyOn(audit, 'record').mockImplementation((tx, input) => {
+      if (
+        input.action === 'catalog.product_description_updated' &&
+        input.changes &&
+        typeof input.changes === 'object' &&
+        'after' in input.changes
+      )
+        throw new Error('synthetic-final-description-audit-failure');
+      return original(tx, input);
+    });
+    try {
+      await call('patch', `/products/${id}`)
+        .send({ name: 'Changed', description: 'New' })
+        .expect(500);
+    } finally {
+      spy.mockRestore();
+    }
+    expect((await call('get', `/products/${id}`).expect(200)).body.data).toEqual(before.body.data);
+    expect(await prisma.auditLog.count({ where })).toBe(count);
+  });
 });

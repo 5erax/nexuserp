@@ -273,18 +273,33 @@ export class CatalogService {
       await tx.$queryRaw`SELECT id FROM products WHERE organization_id=${actor.organizationId}::uuid AND id=${id}::uuid FOR NO KEY UPDATE`;
       const before = productData(await this.findProduct(tx, actor.organizationId, id));
       const data = productData(await tx.product.update({ where: { id }, data: input }));
-      await this.audit.record(tx, {
-        organizationId: actor.organizationId,
-        actorId: actor.id,
-        action:
-          before.status !== data.status && data.status === 'INACTIVE'
-            ? 'catalog.product_archived'
-            : 'catalog.product_updated',
-        entityType: 'product',
-        entityId: id,
-        ...context,
-        changes: { before, after: data },
-      });
+      const { description: beforeDescription, ...beforeHeader } = before;
+      const { description: afterDescription, ...afterHeader } = data;
+      const record = (action: string, changes: Prisma.InputJsonValue) =>
+        this.audit.record(tx, {
+          organizationId: actor.organizationId,
+          actorId: actor.id,
+          action,
+          entityType: 'product',
+          entityId: id,
+          ...context,
+          changes,
+        });
+      await record(
+        before.status !== data.status && data.status === 'INACTIVE'
+          ? 'catalog.product_archived'
+          : 'catalog.product_updated',
+        { before: beforeHeader, after: afterHeader },
+      );
+      if (beforeDescription !== afterDescription) {
+        // Each 2,000-character description can occupy 12 KiB after JSON escaping.
+        await record('catalog.product_description_updated', {
+          before: { description: beforeDescription },
+        });
+        await record('catalog.product_description_updated', {
+          after: { description: afterDescription },
+        });
+      }
       return data;
     });
   }

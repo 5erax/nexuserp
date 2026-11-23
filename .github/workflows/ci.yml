@@ -28,9 +28,9 @@ jobs:
       CSRF_SECRET: foundation_ci_csrf_key_only_not_for_deployment
       WEB_ORIGIN: http://127.0.0.1:3000
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
         with: { node-version-file: .nvmrc, cache: pnpm }
       - run: pnpm install --frozen-lockfile
       - run: pnpm db:generate
@@ -61,7 +61,7 @@ jobs:
       - name: Full dependency audit (tooling included)
         if: always()
         run: pnpm audit --json > dependency-audit.json || true
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: foundation-diagnostics
@@ -92,15 +92,15 @@ jobs:
       CSRF_SECRET: security_ci_csrf_key_only_not_for_deployment
       WEB_ORIGIN: http://127.0.0.1:3000
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
         with: { node-version-file: .nvmrc, cache: pnpm }
       - run: pnpm install --frozen-lockfile
       - run: pnpm db:generate
       - run: pnpm --filter @nexus/api test:security
       - run: pnpm --filter @nexus/api test:security:mutation
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with: { name: iam-security-diagnostics, path: apps/api/coverage/ }
   dev-containers:
@@ -111,8 +111,8 @@ jobs:
       POSTGRES_PASSWORD: dev_ci_only
       COMPOSE_DATABASE_URL: postgresql://nexus:dev_ci_only@postgres:5432/nexuserp
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with: { node-version-file: .nvmrc }
       - name: Start development profile on a clean runner
         run: |
@@ -131,7 +131,7 @@ jobs:
         run: |
           docker compose --profile dev logs > compose-dev.log
           docker compose --profile dev down -v
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with: { name: development-container-diagnostics, path: compose-dev.log }
   containers:
@@ -143,7 +143,7 @@ jobs:
       COMPOSE_DATABASE_URL: postgresql://nexus:ci%23only%3F%25@postgres:5432/nexuserp
       API_RATE_LIMIT: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Build and start Compose
         run: |
           cp .env.example .env
